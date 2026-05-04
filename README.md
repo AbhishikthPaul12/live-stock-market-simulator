@@ -1,24 +1,52 @@
-# live-stock-market-simulator
-A stock market simulator which provides updates on stocks every few seconds. Uses a real-time stock API.
+# Live Stock Market Simulator
 
-### Features
+A web-based application that simulates real-time stock trading using virtual money where users can buy and sell stocks, track their portfolio, and analyze performance.
 
-1. Virtual Wallet
-2. Buy/sell stocks
-3. Portfolio dashboard
-4. Profit/loss tracking
+## Features
 
-### Advanced Features
+Core Features:
 
-1. Real-time stock API
-2. Trading leaderboard
-3. Historical analysis
-4. Alerts for price changes
+* Virtual Wallet
+* Buy/Sell Stocks
+* Portfolio Dashboard
+* Profit/Loss Tracking
 
-### Tech Stack
+Advanced Features:
 
-1. React
-2. Chart.js or Recharts
-3. Node.js
-4. MongoDB
-5. Socket.IO
+* Real-Time Stock API
+* Trading Leaderboard
+* Historical Analysis
+* Price Alerts
+
+## Tech Stack
+
+* Frontend: React
+* Backend: Node.js
+* Database: MongoDB
+* Charts: Chart.js / Recharts
+* Real-time: Socket.io
+
+## Architecture
+
+Frontend (React) → Backend (Node.js) → Database (MongoDB) with integration to Stock API and real-time updates using Socket.io.
+
+## Team
+
+* Member 1 – Vamshi Krishna Kommu(24EG105F33)
+* Member 2 – Abhiram Valmeekam(24EG105H01)
+* Member 3 – Abhishikth Paul Ganta(24EG105H02)
+* Member 4 – Dingari Vikram(24EG105K19)
+* Member 5 – Kandlakuntla Bharadwaj(24EG105K27)
+
+## Setup Instructions
+
+1. Clone the repository
+2. Install dependencies
+3. Run backend server
+4. Run frontend application
+
+## Future Enhancements
+
+* AI-based recommendations
+* Advanced charting
+* Mobile support
