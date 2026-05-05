@@ -1,18 +1,48 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom"
-import RootLayout from "./RootLayout"
-import Dashboard from "./pages/Dashboard"
-import Market from "./pages/Market"
-import Portfolio from "./pages/Portfolio"
-import Leaderboard from "./pages/Leaderboard"
-import Alerts from "./pages/Alerts"
-import Transactions from "./pages/Transactions"   
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+
+import RootLayout from "./RootLayout";
+import Dashboard from "./pages/Dashboard";
+import Market from "./pages/Market";
+import Portfolio from "./pages/Portfolio";
+import Leaderboard from "./pages/Leaderboard";
+import Alerts from "./pages/Alerts";
+import Transactions from "./pages/Transactions";
 import Watchlist from "./pages/Watchlist";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Profile from "./pages/Profile";
 
 function App() {
+  const [user, setUser] = useState(null);
+
+  // Load user on app start
+  useEffect(() => {
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    setUser(storedUser);
+  }, []);
+
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<RootLayout />}>
+
+        {/* LOGIN */}
+        <Route
+          path="/"
+          element={!user ? <Login setUser={setUser} /> : <Navigate to="/dashboard" />}
+        />
+
+        {/* REGISTER */}
+        <Route
+          path="/register"
+          element={!user ? <Register /> : <Navigate to="/dashboard" />}
+        />
+
+        {/* DASHBOARD */}
+        <Route
+          path="/dashboard"
+          element={user ? <RootLayout setUser={setUser} /> : <Navigate to="/" />}
+        >
           <Route index element={<Dashboard />} />
           <Route path="market" element={<Market />} />
           <Route path="portfolio" element={<Portfolio />} />
@@ -20,7 +50,9 @@ function App() {
           <Route path="transactions" element={<Transactions />} />
           <Route path="leaderboard" element={<Leaderboard />} />
           <Route path="alerts" element={<Alerts />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
+
       </Routes>
     </Router>
   );

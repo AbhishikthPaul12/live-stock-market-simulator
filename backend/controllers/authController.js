@@ -8,33 +8,25 @@ const generateToken = (id) => {
   });
 };
 
-// Register
+// REGISTER
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // Validation
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        message: "Please provide all required fields",
-      });
-    }
+    const userExists = await User.findOne({ email });
 
-    const existingUser = await User.findOne({ email });
-
-    if (existingUser) {
-      return res.status(400).json({
-        message: "User already exists",
-      });
+    if (userExists) {
+      return res.status(400).json({ message: "User already exists" });
     }
 
     const user = await User.create({
       name,
       email,
       password,
+      walletBalance: 100000, // default balance
     });
 
-    return res.status(201).json({
+    res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
@@ -43,56 +35,49 @@ export const registerUser = async (req, res) => {
     });
 
   } catch (error) {
-    return res.status(500).json({
-      message: error.message,
-    });
+    console.error("REGISTER ERROR:", error.message);
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Login
+// LOGIN
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validation
-    if (!email || !password) {
-      return res.status(400).json({
-        message: "Please provide email and password",
-      });
-    }
-
     const user = await User.findOne({ email });
 
     if (user && (await user.matchPassword(password))) {
-      return res.json({
+      res.json({
         _id: user._id,
         name: user.name,
         email: user.email,
         walletBalance: user.walletBalance,
         token: generateToken(user._id),
       });
+    } else {
+      res.status(401).json({ message: "Invalid email or password" });
     }
 
-    return res.status(401).json({
-      message: "Invalid email or password",
-    });
-
   } catch (error) {
-    return res.status(500).json({
-      message: error.message,
-    });
+    console.error("LOGIN ERROR:", error.message);
+    res.status(500).json({ message: error.message });
   }
 };
 
-// Get Profile (Protected)
+// PROFILE
 export const getUserProfile = async (req, res) => {
   try {
-    // req.user is attached by middleware
-    return res.json(req.user);
+    const user = await User.findById(req.user).select("-password");
+
+    if (user) {
+      res.json(user);
+    } else {
+      res.status(404).json({ message: "User not found" });
+    }
 
   } catch (error) {
-    return res.status(500).json({
-      message: error.message,
-    });
+    console.error("PROFILE ERROR:", error.message);
+    res.status(500).json({ message: error.message });
   }
 };
