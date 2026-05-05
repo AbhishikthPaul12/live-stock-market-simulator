@@ -1,8 +1,16 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-
 import connectDB from "./config/db.js";
+import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
+import authRoutes from "./routes/authRoutes.js";
+import tradeRoutes from "./routes/tradeRoutes.js";
+import portfolioRoutes from "./routes/portfolioRoutes.js";
+import transactionRoutes from "./routes/transactionRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import stockRoutes from "./routes/stockRoutes.js";
+import leaderboardRoutes from "./routes/leaderboardRoutes.js";
+import alertRoutes from "./routes/alertRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -18,7 +26,17 @@ app.get("/", (req, res) => {
   res.send("API Running...");
 });
 
-// app.use("/api/auth", authRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/trade", tradeRoutes);
+app.use("/api/portfolio", portfolioRoutes);
+app.use("/api/transactions", transactionRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/stocks", stockRoutes);
+app.use("/api/leaderboard", leaderboardRoutes);
+app.use("/api/alerts", alertRoutes);
+
+app.use(notFound)
+app.use(errorHandler)
 
 const PORT = process.env.PORT || 5000;
 

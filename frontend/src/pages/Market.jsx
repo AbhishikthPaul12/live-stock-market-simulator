@@ -1,10 +1,8 @@
-import { useState, useContext } from "react"
-import { AppContext } from "../contexts/AppContext"
+import { useState } from "react"
+import { buyStock } from "../api/trade.js"
 import BuyModal from "../components/BuyModal"
-import StockChart from "../components/StockChart";
 
 function Market() {
-  const { buyStock, addToWatchlist } = useContext(AppContext);
   const [selectedStock, setSelectedStock] = useState(null);
 
   const stocks = [
@@ -14,16 +12,36 @@ function Market() {
     { symbol: "HDFC", price: 2700 }
   ];
 
-  function openModal(stock) {
-    setSelectedStock(stock);
+  // BUY FUNCTION
+  async function handleBuy(symbol, price, qty) {
+    try {
+      await buyStock({ symbol, price, quantity: qty });
+      alert("Stock bought!");
+      setSelectedStock(null);
+    } catch (error) {
+      alert("Error buying stock");
+    }
   }
 
-  function closeModal() {
-    setSelectedStock(null);
-  }
+  // WATCHLIST FUNCTION (LOCALSTORAGE BASED)
+  function addToWatchlist(stock) {
+    const stored =
+      JSON.parse(localStorage.getItem("watchlist")) || [];
 
-  function handleBuy(symbol, price, qty) {
-    buyStock(symbol, price, qty);
+    const exists = stored.find(
+      (item) => item.symbol === stock.symbol
+    );
+
+    if (exists) {
+      alert("Already in watchlist");
+      return;
+    }
+
+    const updated = [...stored, stock];
+
+    localStorage.setItem("watchlist", JSON.stringify(updated));
+
+    alert("Added to watchlist");
   }
 
   return (
@@ -31,45 +49,43 @@ function Market() {
       <h1 className="text-3xl font-bold mb-6">Market</h1>
 
       <div className="grid md:grid-cols-3 gap-6">
-        {stocks.map(function (stock) {
-          return (
-            <div
-              key={stock.symbol}
-              className="bg-white p-5 rounded-xl shadow hover:shadow-lg transition"
+        {stocks.map((stock) => (
+          <div
+            key={stock.symbol}
+            className="bg-white p-5 rounded-xl shadow"
+          >
+            <h2 className="text-xl font-semibold">
+              {stock.symbol}
+            </h2>
+
+            <p className="text-green-600 text-2xl font-bold">
+              ₹{stock.price}
+            </p>
+
+            {/* BUY BUTTON */}
+            <button
+              onClick={() => setSelectedStock(stock)}
+              className="mt-4 w-full bg-blue-500 text-white py-2 rounded"
             >
-              <h2 className="text-xl font-semibold">{stock.symbol}</h2>
+              Buy
+            </button>
 
-              <p className="text-gray-500 mt-1">Current Price</p>
-              <p className="text-2xl font-bold text-green-600">
-                ₹{stock.price}
-              </p>
-
-              <button
-                onClick={() => openModal(stock)}
-                className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg"
-              >
-                Buy
-              </button>
-
-              <button
-                onClick={() => addToWatchlist(stock)}
-                className="mt-2 w-full bg-yellow-400 text-black py-2 rounded-lg"
-              >
-                Add to Watchlist
-              </button>
-
-            </div>
-          );
-        })}
+            {/* WATCHLIST BUTTON */}
+            <button
+              onClick={() => addToWatchlist(stock)}
+              className="mt-2 w-full bg-yellow-400 text-black py-2 rounded"
+            >
+              Add to Watchlist
+            </button>
+          </div>
+        ))}
       </div>
 
       <BuyModal
         stock={selectedStock}
-        onClose={closeModal}
+        onClose={() => setSelectedStock(null)}
         onConfirm={handleBuy}
       />
-
-      <StockChart symbol="TCS" />
     </div>
   );
 }

@@ -1,40 +1,45 @@
-import { useContext, useState } from "react"
-import { AppContext } from "../contexts/AppContext"
+import { useEffect, useState } from "react"
+import { getPortfolio } from "../api/data.js"
+import { sellStock } from "../api/trade.js"
 import SellModal from "../components/SellModal"
 
 function Portfolio() {
-  const { portfolio, sellStock, realizedProfit } =
-    useContext(AppContext);
-
+  const [portfolio, setPortfolio] = useState([]);
   const [selectedStock, setSelectedStock] = useState(null);
+  const [realizedProfit, setRealizedProfit] = useState(0);
 
-  const currentPrices = {
+  const prices = {
     TCS: 4000,
     INFY: 1600,
     RELIANCE: 2600,
     HDFC: 2800
   };
 
-  function openModal(stock) {
-    setSelectedStock(stock);
+  async function fetchData() {
+    const data = await getPortfolio();
+    setPortfolio(data);
   }
 
-  function closeModal() {
-    setSelectedStock(null);
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  async function handleSell(symbol, price, qty) {
+    const stock = portfolio.find((s) => s.symbol === symbol);
+
+    const profit = (price - stock.buyPrice) * qty;
+    setRealizedProfit((prev) => prev + profit);
+
+    await sellStock({ symbol, price, quantity: qty });
+    fetchData();
   }
 
-  function handleSell(symbol, price, qty) {
-    sellStock(symbol, price, qty);
-  }
+  // 🔥 Unrealized Profit
+  const unrealizedProfit = portfolio.reduce((acc, item) => {
+    const current = prices[item.symbol] || item.buyPrice;
+    return acc + (current - item.buyPrice) * item.quantity;
+  }, 0);
 
-  function calculateUnrealized() {
-    return portfolio.reduce(function (acc, item) {
-      const current = currentPrices[item.symbol] || item.buyPrice;
-      return acc + (current - item.buyPrice) * item.quantity;
-    }, 0);
-  }
-
-  const unrealizedProfit = calculateUnrealized();
   const totalProfit = realizedProfit + unrealizedProfit;
 
   return (
@@ -44,20 +49,19 @@ function Portfolio() {
       {/* SUMMARY */}
       <div className="grid md:grid-cols-3 gap-4 mb-6">
         <div className="bg-white p-4 rounded shadow">
-          <p className="text-gray-500">Realized</p>
-          <p className="text-xl font-bold text-green-600">
+          <p>Realized</p>
+          <p className="text-green-600 font-bold">
             ₹{realizedProfit}
           </p>
         </div>
 
         <div className="bg-white p-4 rounded shadow">
-          <p className="text-gray-500">Unrealized</p>
+          <p>Unrealized</p>
           <p
             className={
-              "text-xl font-bold " +
-              (unrealizedProfit >= 0
-                ? "text-green-600"
-                : "text-red-500")
+              unrealizedProfit >= 0
+                ? "text-green-600 font-bold"
+                : "text-red-500 font-bold"
             }
           >
             ₹{unrealizedProfit}
@@ -65,13 +69,12 @@ function Portfolio() {
         </div>
 
         <div className="bg-white p-4 rounded shadow">
-          <p className="text-gray-500">Total</p>
+          <p>Total</p>
           <p
             className={
-              "text-xl font-bold " +
-              (totalProfit >= 0
-                ? "text-green-600"
-                : "text-red-500")
+              totalProfit >= 0
+                ? "text-green-600 font-bold"
+                : "text-red-500 font-bold"
             }
           >
             ₹{totalProfit}
@@ -80,69 +83,48 @@ function Portfolio() {
       </div>
 
       {/* STOCK LIST */}
-      {portfolio.length === 0 ? (
-        <div className="bg-white p-6 rounded shadow text-center">
-          <p className="text-gray-500">No stocks owned yet</p>
-        </div>
-      ) : (
-        <div className="grid md:grid-cols-2 gap-6">
-          {portfolio.map(function (item, index) {
-            const current =
-              currentPrices[item.symbol] || item.buyPrice;
+      <div className="grid md:grid-cols-2 gap-6">
+        {portfolio.map((item, i) => {
+          const current = prices[item.symbol] || item.buyPrice;
+          const profit =
+            (current - item.buyPrice) * item.quantity;
 
-            const profit =
-              (current - item.buyPrice) * item.quantity;
+          return (
+            <div key={i} className="bg-white p-5 rounded shadow">
+              <h2>{item.symbol}</h2>
+              <p>Qty: {item.quantity}</p>
+              <p>Buy: ₹{item.buyPrice}</p>
+              <p>Current: ₹{current}</p>
 
-            return (
-              <div
-                key={index}
-                className="bg-white p-5 rounded-xl shadow"
+              <p
+                className={
+                  profit >= 0
+                    ? "text-green-600 font-bold"
+                    : "text-red-500 font-bold"
+                }
               >
-                <div className="flex justify-between">
-                  <h2 className="text-xl font-semibold">
-                    {item.symbol}
-                  </h2>
-                  <span className="text-sm text-gray-500">
-                    Qty: {item.quantity}
-                  </span>
-                </div>
+                ₹{profit}
+              </p>
 
-                <div className="mt-3 text-gray-600">
-                  <p>Buy: ₹{item.buyPrice}</p>
-                  <p>Current: ₹{current}</p>
-                </div>
-
-                <p
-                  className={
-                    "mt-3 font-bold " +
-                    (profit >= 0
-                      ? "text-green-600"
-                      : "text-red-500")
-                  }
-                >
-                  {profit >= 0 ? "+" : ""}₹{profit}
-                </p>
-
-                <button
-                  onClick={() =>
-                    openModal({
-                      ...item,
-                      currentPrice: current
-                    })
-                  }
-                  className="mt-4 w-full bg-red-500 text-white py-2 rounded-lg"
-                >
-                  Sell
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              <button
+                onClick={() =>
+                  setSelectedStock({
+                    ...item,
+                    currentPrice: current
+                  })
+                }
+                className="mt-2 bg-red-500 text-white px-3 py-1"
+              >
+                Sell
+              </button>
+            </div>
+          );
+        })}
+      </div>
 
       <SellModal
         stock={selectedStock}
-        onClose={closeModal}
+        onClose={() => setSelectedStock(null)}
         onConfirm={handleSell}
       />
     </div>

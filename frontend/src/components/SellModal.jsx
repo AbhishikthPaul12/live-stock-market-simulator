@@ -1,13 +1,27 @@
-import { useState } from "react";
+import { useState, useEffect } from "react"
 
 function SellModal(props) {
   const { stock, onClose, onConfirm } = props;
   const [qty, setQty] = useState(1);
 
-  // Prevent crash
+  // Reset qty when stock changes
+  useEffect(() => {
+    setQty(1);
+  }, [stock]);
+
   if (!stock || !stock.symbol) return null;
 
   function handleConfirm() {
+    if (!qty || qty <= 0) {
+      alert("Enter valid quantity");
+      return;
+    }
+
+    if (qty > stock.quantity) {
+      alert("Cannot sell more than owned");
+      return;
+    }
+
     onConfirm(stock.symbol, stock.currentPrice, qty);
     onClose();
   }

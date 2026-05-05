@@ -1,12 +1,22 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 function BuyModal(props) {
   const { stock, onClose, onConfirm } = props;
   const [qty, setQty] = useState(1);
 
+  // Reset qty when stock changes
+  useEffect(() => {
+    setQty(1);
+  }, [stock]);
+
   if (!stock) return null;
 
   function handleConfirm() {
+    if (!qty || qty <= 0) {
+      alert("Enter valid quantity");
+      return;
+    }
+
     onConfirm(stock.symbol, stock.price, qty);
     onClose();
   }
