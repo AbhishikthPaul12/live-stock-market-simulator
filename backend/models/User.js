@@ -32,6 +32,13 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
+    watchlist: [
+      {
+        symbol: { type: String, required: true },
+        name: { type: String }
+      }
+    ],
+
     role: {
       type: String,
       enum: ["user", "admin"],
