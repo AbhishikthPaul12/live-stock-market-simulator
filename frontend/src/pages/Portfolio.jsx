@@ -63,15 +63,14 @@ function Portfolio() {
 
     fetchData();
     
+    // Independent interval for live price updates
     const interval = setInterval(() => {
-      setPortfolio(currentPortfolio => {
-        updatePrices(currentPortfolio);
-        return currentPortfolio;
-      });
+      // Fetch latest portfolio from state and update its prices
+      updatePrices(portfolio); 
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [portfolio]); // Re-run effect or rely on closure depending on strategy
 
   async function handleSell(symbol, price, qty) {
     try {

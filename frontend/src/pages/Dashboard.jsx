@@ -63,15 +63,13 @@ function Dashboard() {
 
     fetchData();
     
+    // Independent interval for live price updates
     const interval = setInterval(() => {
-      setPortfolio(currentPortfolio => {
-        updatePrices(currentPortfolio);
-        return currentPortfolio;
-      });
+      updatePrices(portfolio);
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [portfolio]);
 
   const portfolioValue = portfolio.reduce((acc, item) => {
     const current = livePrices[item.symbol]?.price || item.buyPrice;

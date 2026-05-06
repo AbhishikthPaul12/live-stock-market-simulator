@@ -36,10 +36,17 @@ export const buyStock = async (req, res) => {
     let stock = await Portfolio.findOne({ user: userId, symbol });
 
     if (stock) {
-      // Calculate weighted average buy price
-      const totalQuantity = stock.quantity + quantity;
-      const weightedAvgPrice = ((stock.buyPrice * stock.quantity) + (price * quantity)) / totalQuantity;
+      // Calculate weighted average buy price with NaN safety
+      const oldQty = Number(stock.quantity) || 0;
+      const oldPrice = Number(stock.buyPrice) || 0;
+      const newQty = Number(quantity) || 0;
+      const newPrice = Number(price) || 0;
       
+      const totalQuantity = oldQty + newQty;
+      let weightedAvgPrice = ((oldPrice * oldQty) + (newPrice * newQty)) / totalQuantity;
+      
+      if (isNaN(weightedAvgPrice)) weightedAvgPrice = newPrice;
+
       stock.quantity = totalQuantity;
       stock.buyPrice = weightedAvgPrice;
       await stock.save();
@@ -47,8 +54,8 @@ export const buyStock = async (req, res) => {
       stock = await Portfolio.create({
         user: userId,
         symbol,
-        quantity,
-        buyPrice: price
+        quantity: Number(quantity),
+        buyPrice: Number(price)
       });
     }
 
@@ -87,23 +94,40 @@ export const sellStock = async (req, res) => {
       return res.status(400).json({ message: "Not enough stock" });
     }
 
-    // Calculate profit before potential deletion
-    const profit = (Number(price) - Number(stock.buyPrice)) * Number(quantity);
+    // Calculate profit before potential deletion with NaN safety
+    const sellPrice = Number(price) || 0;
+    const buyPrice = Number(stock.buyPrice) || 0;
+    const qtySold = Number(quantity) || 0;
+    
+    let profit = (sellPrice - buyPrice) * qtySold;
+    if (isNaN(profit)) profit = 0;
 
     // Update portfolio
-    stock.quantity -= Number(quantity);
+    stock.quantity = (Number(stock.quantity) || 0) - qtySold;
 
-    if (stock.quantity === 0) {
+    if (stock.quantity <= 0) {
       await stock.deleteOne();
     } else {
       await stock.save();
     }
 
-    // Update wallet and realized profit
+    // Update wallet and realized profit with absolute safety
     const user = await User.findById(userId);
-    user.walletBalance += Number(price) * Number(quantity);
-    user.realizedProfit = (user.realizedProfit || 0) + profit;
+    user.walletBalance = (Number(user.walletBalance) || 0) + (sellPrice * qtySold);
+    
+    const currentRealized = Number(user.realizedProfit) || 0;
+    user.realizedProfit = Number((currentRealized + profit).toFixed(6));
+    
     await user.save();
+
+    // Fetch FRESH copy to ensure everything is synced before returning
+    const updatedUser = await User.findById(userId);
+
+    res.json({ 
+      message: "Stock sold successfully", 
+      walletBalance: updatedUser.walletBalance,
+      realizedProfit: updatedUser.realizedProfit
+    });
 
     // Record transaction
     await Transaction.create({
@@ -112,12 +136,6 @@ export const sellStock = async (req, res) => {
       symbol,
       quantity: Number(quantity),
       price: Number(price)
-    });
-
-    res.json({ 
-      message: "Stock sold successfully", 
-      walletBalance: user.walletBalance,
-      realizedProfit: user.realizedProfit
     });
 
   } catch (error) {
