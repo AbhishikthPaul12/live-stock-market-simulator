@@ -9,6 +9,11 @@ export const loginUser = async (data) => {
   return res.data;
 };
 
+export const getProfile = async () => {
+  const res = await axios.get("/auth/profile");
+  return res.data;
+};
+
 export const registerUser = async (data) => {
   const res = await axios.post("/auth/register", data);
   return res.data;

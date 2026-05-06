@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getPortfolio } from "../api/data.js";
 import { sellStock } from "../api/trade.js";
+import { getProfile } from "../api/auth.js";
 import SellModal from "../components/SellModal";
 
 function Portfolio() {
@@ -13,8 +14,9 @@ function Portfolio() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const p = await getPortfolio();
+        const [p, profile] = await Promise.all([getPortfolio(), getProfile()]);
         setPortfolio(p);
+        setRealizedProfit(profile.realizedProfit || 0);
         await updatePrices(p);
       } catch (err) {
         console.error("Error fetching portfolio:", err);
@@ -72,13 +74,32 @@ function Portfolio() {
   }, []);
 
   async function handleSell(symbol, price, qty) {
-    const stock = portfolio.find((s) => s.symbol === symbol);
-    const profit = (price - stock.buyPrice) * qty;
-    setRealizedProfit((prev) => prev + profit);
+    try {
+      const stock = portfolio.find((s) => s.symbol === symbol);
+      const profit = (price - stock.buyPrice) * qty;
+      
+      // Optimistic UI update
+      setRealizedProfit((prev) => prev + profit);
 
-    await sellStock({ symbol, price, quantity: qty });
-    const p = await getPortfolio();
-    setPortfolio(p);
+      const res = await sellStock({ symbol, quantity: qty });
+      
+      // Update local state immediately from response
+      setRealizedProfit(res.realizedProfit || 0);
+      
+      // Refresh portfolio list
+      const p = await getPortfolio();
+      setPortfolio(p);
+      
+      alert(res.message || "Stock sold successfully!");
+    } catch (err) {
+      console.error("Sell error:", err);
+      alert(err.response?.data?.message || "Failed to sell stock.");
+      
+      // Revert data in case of error
+      const [p, profile] = await Promise.all([getPortfolio(), getProfile()]);
+      setPortfolio(p);
+      setRealizedProfit(profile.realizedProfit || 0);
+    }
   }
 
   const unrealizedProfit = portfolio.reduce((acc, item) => {
@@ -106,7 +127,7 @@ function Portfolio() {
             <p className="text-slate-500 mt-1">Real-time asset tracking and performance analysis.</p>
           </div>
           <div className={`px-4 py-2 rounded-full font-bold text-sm ${isPositive ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-            {isPositive ? '▲' : '▼'} {Math.abs((totalProfit / 100000) * 100).toFixed(2)}% Performance
+            {isPositive ? '▲' : '▼'} ₹{Math.abs(totalProfit).toFixed(2)} Overall
           </div>
         </header>
 

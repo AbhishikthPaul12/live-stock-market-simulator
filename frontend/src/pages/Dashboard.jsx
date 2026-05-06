@@ -1,20 +1,22 @@
 import { useEffect, useState } from "react";
+import { getProfile } from "../api/auth.js";
 import { getPortfolio, getWallet } from "../api/data.js";
 
 function Dashboard() {
   const [wallet, setWallet] = useState(0);
   const [portfolio, setPortfolio] = useState([]);
+  const [realizedProfit, setRealizedProfit] = useState(0);
   const [livePrices, setLivePrices] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const w = await getWallet();
-        const p = await getPortfolio();
-
+        const [w, p, profile] = await Promise.all([getWallet(), getPortfolio(), getProfile()]);
+        
         setWallet(w.walletBalance);
         setPortfolio(p);
+        setRealizedProfit(profile.realizedProfit || 0);
         await updatePrices(p);
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
@@ -81,6 +83,8 @@ function Dashboard() {
     return acc + (current - item.buyPrice) * item.quantity;
   }, 0);
 
+  const totalProfit = realizedProfit + profit;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
@@ -123,10 +127,10 @@ function Dashboard() {
             </p>
           </div>
 
-          <div className={`p-8 rounded-3xl shadow-lg transition-all transform hover:scale-[1.02] text-white ${profit >= 0 ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-rose-500 to-orange-600'}`}>
-            <p className="text-[10px] uppercase font-bold tracking-widest opacity-80 mb-3">Floating P&L</p>
-            <p className="text-3xl font-black">{profit >= 0 ? '+' : ''}₹{profit.toFixed(2)}</p>
-            <p className="text-xs font-bold opacity-80 mt-2">Unrealized Growth</p>
+          <div className={`p-8 rounded-3xl shadow-lg transition-all transform hover:scale-[1.02] text-white ${totalProfit >= 0 ? 'bg-gradient-to-br from-indigo-500 to-purple-600' : 'bg-gradient-to-br from-rose-500 to-orange-600'}`}>
+            <p className="text-[10px] uppercase font-bold tracking-widest opacity-80 mb-3">Total Net P&L</p>
+            <p className="text-3xl font-black">{totalProfit >= 0 ? '+' : ''}₹{totalProfit.toFixed(2)}</p>
+            <p className="text-xs font-bold opacity-80 mt-2">Realized + Floating</p>
           </div>
         </div>
 
