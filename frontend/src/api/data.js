@@ -43,3 +43,19 @@ export const getTransactions = async () => {
   const res = await axios.get("/transactions");
   return res.data;
 };
+
+// STOCKS
+export const getAllStocks = async () => {
+  const res = await axios.get(`/stocks/all`);
+  return res.data;
+};
+
+export const getStockData = async (symbol) => {
+  const res = await axios.get(`/stocks/${symbol}`);
+  return res.data;
+};
+
+export const getStockHistory = async (symbol) => {
+  const res = await axios.get(`/stocks/${symbol}/history`);
+  return res.data;
+};

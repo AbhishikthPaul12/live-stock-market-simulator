@@ -17,7 +17,7 @@ function BuyModal(props) {
       return;
     }
 
-    onConfirm(stock.symbol, stock.price, qty);
+    onConfirm(stock.symbol, qty);
     onClose();
   }
 

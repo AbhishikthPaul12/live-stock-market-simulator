@@ -2,18 +2,14 @@ import { useEffect, useState } from "react"
 import { getPortfolio } from "../api/data.js"
 import { sellStock } from "../api/trade.js"
 import SellModal from "../components/SellModal"
+import { useStockPrices } from "../hooks/useStockPrices.js"
 
 function Portfolio() {
   const [portfolio, setPortfolio] = useState([]);
   const [selectedStock, setSelectedStock] = useState(null);
   const [realizedProfit, setRealizedProfit] = useState(0);
 
-  const prices = {
-    TCS: 4000,
-    INFY: 1600,
-    RELIANCE: 2600,
-    HDFC: 2800
-  };
+  const prices = {};
 
   async function fetchData() {
     const data = await getPortfolio();
@@ -51,7 +47,7 @@ function Portfolio() {
         <div className="bg-white p-4 rounded shadow">
           <p>Realized</p>
           <p className="text-green-600 font-bold">
-            ₹{realizedProfit}
+            ₹{(realizedProfit || 0).toFixed(3)}
           </p>
         </div>
 
@@ -64,7 +60,7 @@ function Portfolio() {
                 : "text-red-500 font-bold"
             }
           >
-            ₹{unrealizedProfit}
+            ₹{(unrealizedProfit || 0).toFixed(3)}
           </p>
         </div>
 
@@ -77,7 +73,7 @@ function Portfolio() {
                 : "text-red-500 font-bold"
             }
           >
-            ₹{totalProfit}
+            ₹{(totalProfit || 0).toFixed(3)}
           </p>
         </div>
       </div>
@@ -93,8 +89,8 @@ function Portfolio() {
             <div key={i} className="bg-white p-5 rounded shadow">
               <h2>{item.symbol}</h2>
               <p>Qty: {item.quantity}</p>
-              <p>Buy: ₹{item.buyPrice}</p>
-              <p>Current: ₹{current}</p>
+              <p>Buy: ₹{(item.buyPrice || 0).toFixed(3)}</p>
+              <p>Current: ₹{(current || 0).toFixed(3)}</p>
 
               <p
                 className={
@@ -103,7 +99,7 @@ function Portfolio() {
                     : "text-red-500 font-bold"
                 }
               >
-                ₹{profit}
+                ₹{(profit || 0).toFixed(3)}
               </p>
 
               <button
