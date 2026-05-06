@@ -36,7 +36,12 @@ export const buyStock = async (req, res) => {
     let stock = await Portfolio.findOne({ user: userId, symbol });
 
     if (stock) {
-      stock.quantity += quantity;
+      // Calculate weighted average buy price
+      const totalQuantity = stock.quantity + quantity;
+      const weightedAvgPrice = ((stock.buyPrice * stock.quantity) + (price * quantity)) / totalQuantity;
+      
+      stock.quantity = totalQuantity;
+      stock.buyPrice = weightedAvgPrice;
       await stock.save();
     } else {
       stock = await Portfolio.create({
@@ -67,27 +72,37 @@ export const buyStock = async (req, res) => {
 // SELL STOCK
 export const sellStock = async (req, res) => {
   try {
-    const { symbol, price, quantity } = req.body;
+    const { symbol, quantity } = req.body;
     const userId = req.user._id;
+
+    // Fetch REAL price securely
+    const { price } = await getStockPrice(symbol);
+    if (!price || price <= 0) {
+      return res.status(400).json({ message: "Invalid stock price from market" });
+    }
 
     const stock = await Portfolio.findOne({ user: userId, symbol });
 
-    if (!stock || stock.quantity<quantity) {
+    if (!stock || stock.quantity < quantity) {
       return res.status(400).json({ message: "Not enough stock" });
     }
 
-    // Update portfolio
-    stock.quantity-=quantity;
+    // Calculate profit before potential deletion
+    const profit = (Number(price) - Number(stock.buyPrice)) * Number(quantity);
 
-    if (stock.quantity===0) {
+    // Update portfolio
+    stock.quantity -= Number(quantity);
+
+    if (stock.quantity === 0) {
       await stock.deleteOne();
     } else {
       await stock.save();
     }
 
-    // Update wallet
+    // Update wallet and realized profit
     const user = await User.findById(userId);
-    user.walletBalance+=price*quantity;
+    user.walletBalance += Number(price) * Number(quantity);
+    user.realizedProfit = (user.realizedProfit || 0) + profit;
     await user.save();
 
     // Record transaction
@@ -95,11 +110,15 @@ export const sellStock = async (req, res) => {
       user: userId,
       type: "SELL",
       symbol,
-      quantity,
-      price
+      quantity: Number(quantity),
+      price: Number(price)
     });
 
-    res.json({ message: "Stock sold successfully" });
+    res.json({ 
+      message: "Stock sold successfully", 
+      walletBalance: user.walletBalance,
+      realizedProfit: user.realizedProfit
+    });
 
   } catch (error) {
     res.status(500).json({ message: error.message });

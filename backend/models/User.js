@@ -27,6 +27,11 @@ const userSchema = new mongoose.Schema(
       default: 100000,
     },
 
+    realizedProfit: {
+      type: Number,
+      default: 0,
+    },
+
     avatar: {
       type: String,
       default: "",

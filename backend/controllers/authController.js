@@ -31,6 +31,7 @@ export const registerUser = async (req, res) => {
       name: user.name,
       email: user.email,
       walletBalance: user.walletBalance,
+      realizedProfit: user.realizedProfit,
       token: generateToken(user._id),
     });
 
@@ -53,6 +54,7 @@ export const loginUser = async (req, res) => {
         name: user.name,
         email: user.email,
         walletBalance: user.walletBalance,
+        realizedProfit: user.realizedProfit,
         token: generateToken(user._id),
       });
     } else {
@@ -67,17 +69,9 @@ export const loginUser = async (req, res) => {
 
 // PROFILE
 export const getUserProfile = async (req, res) => {
-  try {
-    const user = await User.findById(req.user).select("-password");
-
-    if (user) {
-      res.json(user);
-    } else {
-      res.status(404).json({ message: "User not found" });
-    }
-
-  } catch (error) {
-    console.error("PROFILE ERROR:", error.message);
-    res.status(500).json({ message: error.message });
+  if (req.user) {
+    res.json(req.user);
+  } else {
+    res.status(404).json({ message: "User not found" });
   }
 };
