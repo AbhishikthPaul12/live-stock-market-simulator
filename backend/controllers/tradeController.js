@@ -1,30 +1,42 @@
 import Portfolio from "../models/Portfolio.js";
 import Transaction from "../models/Transaction.js";
 import User from "../models/User.js";
+import { getStockPrice } from "../services/stockService.js";
 
 // BUY STOCK
 export const buyStock = async (req, res) => {
   try {
-    const { symbol, price, quantity } = req.body;
+    const { symbol, quantity } = req.body;
     const userId = req.user._id;
 
-    const totalCost = price*quantity;
+    if (!symbol || !quantity || quantity <= 0) {
+      return res.status(400).json({ message: "Invalid symbol or quantity" });
+    }
 
+    // Fetch REAL price securely from Finnhub
+    const { price } = await getStockPrice(symbol);
+    console.log("API Response:", { price });
+
+    if (!price || price <= 0) {
+      return res.status(400).json({ message: "Invalid stock price from market" });
+    }
+
+    const totalCost = price * quantity;
     const user = await User.findById(userId);
 
-    if (user.walletBalance<totalCost) {
+    if (user.walletBalance < totalCost) {
       return res.status(400).json({ message: "Insufficient balance" });
     }
 
     // Update wallet
-    user.walletBalance-=totalCost;
+    user.walletBalance -= totalCost;
     await user.save();
 
     // Check if stock exists in portfolio
     let stock = await Portfolio.findOne({ user: userId, symbol });
 
     if (stock) {
-      stock.quantity+=quantity;
+      stock.quantity += quantity;
       await stock.save();
     } else {
       stock = await Portfolio.create({
@@ -35,7 +47,7 @@ export const buyStock = async (req, res) => {
       });
     }
 
-    // Record transaction
+    // Record transaction using real price
     await Transaction.create({
       user: userId,
       type: "BUY",

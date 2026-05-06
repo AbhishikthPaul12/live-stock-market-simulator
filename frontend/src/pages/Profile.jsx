@@ -8,7 +8,7 @@ function Profile() {
       <div className="bg-white p-4 rounded shadow">
         <p><strong>Name:</strong> {user?.name}</p>
         <p><strong>Email:</strong> {user?.email}</p>
-        <p><strong>Balance:</strong> ₹{user?.walletBalance}</p>
+        <p><strong>Balance:</strong> ₹{(user?.walletBalance || 0).toFixed(3)}</p>
       </div>
     </div>
   );

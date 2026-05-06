@@ -1,16 +1,12 @@
 import { useEffect, useState } from "react"
 import { getPortfolio, getWallet } from "../api/data.js"
+import { useStockPrices } from "../hooks/useStockPrices.js"
 
 function Dashboard() {
   const [wallet, setWallet] = useState(0);
   const [portfolio, setPortfolio] = useState([]);
 
-  const prices = {
-    TCS: 4000,
-    INFY: 1600,
-    RELIANCE: 2600,
-    HDFC: 2800
-  };
+  const prices = {};
 
   useEffect(() => {
     async function fetchData() {
@@ -45,7 +41,7 @@ function Dashboard() {
       <div className="grid md:grid-cols-4 gap-6">
         <div className="bg-white p-4 rounded shadow">
           <p>Wallet</p>
-          <h2>₹{wallet}</h2>
+          <h2>₹{(wallet || 0).toFixed(3)}</h2>
         </div>
 
         <div className="bg-white p-4 rounded shadow">
@@ -55,7 +51,7 @@ function Dashboard() {
 
         <div className="bg-white p-4 rounded shadow">
           <p>Portfolio Value</p>
-          <h2>₹{portfolioValue}</h2>
+          <h2>₹{(portfolioValue || 0).toFixed(3)}</h2>
         </div>
 
         <div className="bg-white p-4 rounded shadow">
@@ -65,7 +61,7 @@ function Dashboard() {
               profit >= 0 ? "text-green-600" : "text-red-500"
             }
           >
-            ₹{profit}
+            ₹{(profit || 0).toFixed(3)}
           </h2>
         </div>
       </div>
