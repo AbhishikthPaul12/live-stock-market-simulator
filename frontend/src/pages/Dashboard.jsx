@@ -27,7 +27,11 @@ function Dashboard() {
       }
     }
     
-    async function updatePrices(port) {
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    async function updatePricesLoop(port) {
       if (!port || port.length === 0) return;
       const uniqueSymbols = [...new Set(port.map(s => s.symbol))];
       
@@ -63,10 +67,8 @@ function Dashboard() {
       }
     }
 
-    fetchData();
-    
     const interval = setInterval(() => {
-      updatePrices(portfolio);
+      updatePricesLoop(portfolio);
     }, 5000);
 
     return () => clearInterval(interval);

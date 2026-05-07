@@ -20,15 +20,15 @@ function Portfolio() {
         const [p, profile] = await Promise.all([getPortfolio(), getProfile()]);
         setPortfolio(p);
         setRealizedProfit(profile.realizedProfit || 0);
-        await updatePrices(p);
+        await updatePricesLoop(p);
       } catch (err) {
         console.error("Error fetching portfolio:", err);
       } finally {
         setLoading(false);
       }
     }
-    
-    async function updatePrices(port) {
+
+    async function updatePricesLoop(port) {
       if (!port || port.length === 0) return;
       const uniqueSymbols = [...new Set(port.map(s => s.symbol))];
       
@@ -65,9 +65,47 @@ function Portfolio() {
     }
 
     fetchData();
-    
+  }, []);
+
+  useEffect(() => {
+    async function updatePricesLoop(port) {
+      if (!port || port.length === 0) return;
+      const uniqueSymbols = [...new Set(port.map(s => s.symbol))];
+      
+      try {
+        const { getAllStocks, getStockData } = await import('../api/data.js');
+        const allStocks = await getAllStocks();
+        const allPricesMap = {};
+        allStocks.forEach(s => allPricesMap[s.symbol] = s.price);
+
+        const newPrices = {};
+        const symbolsToFetch = [];
+
+        for (const sym of uniqueSymbols) {
+          if (allPricesMap[sym]) {
+             newPrices[sym] = allStocks.find(s => s.symbol === sym);
+          } else {
+             symbolsToFetch.push(sym);
+          }
+        }
+
+        if (symbolsToFetch.length > 0) {
+          const results = await Promise.all(
+            symbolsToFetch.map(sym => getStockData(sym))
+          );
+          results.forEach(res => {
+            if (res && res.price) newPrices[res.symbol] = res;
+          });
+        }
+        
+        setLivePrices(prev => ({...prev, ...newPrices}));
+      } catch (err) {
+        console.error("Error updating prices", err);
+      }
+    }
+
     const interval = setInterval(() => {
-      updatePrices(portfolio); 
+      updatePricesLoop(portfolio); 
     }, 5000);
 
     return () => clearInterval(interval);
