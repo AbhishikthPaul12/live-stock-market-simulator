@@ -16,6 +16,8 @@ import Analytics from "./pages/Analytics";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
+import { ToastProvider } from "./context/ToastContext";
+
 function App() {
   const [user, setUser] = useState(null);
 
@@ -26,42 +28,38 @@ function App() {
   }, []);
 
   return (
-    <Router>
-      <Routes>
-
-        {/* LOGIN */}
-        <Route
-          path="/"
-          element={!user ? <Login setUser={setUser} /> : <Navigate to="/dashboard" />}
-        />
-
-        {/* REGISTER */}
-        <Route
-          path="/register"
-          element={!user ? <Register /> : <Navigate to="/dashboard" />}
-        />
-
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
-
-        {/* DASHBOARD */}
-        <Route
-          path="/dashboard"
-          element={user ? <RootLayout setUser={setUser} /> : <Navigate to="/" />}
-        >
-          <Route index element={<Dashboard />} />
-          <Route path="market" element={<Market />} />
-          <Route path="portfolio" element={<Portfolio />} />
-          <Route path="watchlist" element={<Watchlist />} />
-          <Route path="transactions" element={<Transactions />} />
-          <Route path="leaderboard" element={<Leaderboard />} />
-          <Route path="alerts" element={<Alerts />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="analytics" element={<Analytics />} />
-        </Route>
-
-      </Routes>
-    </Router>
+    <ToastProvider>
+      <Router>
+        <Routes>
+          {/* ... existing routes ... */}
+          {/* (I'll keep the logic inside unchanged, just wrapping) */}
+          <Route
+            path="/"
+            element={!user ? <Login setUser={setUser} /> : <Navigate to="/dashboard" />}
+          />
+          <Route
+            path="/register"
+            element={!user ? <Register /> : <Navigate to="/dashboard" />}
+          />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route
+            path="/dashboard"
+            element={user ? <RootLayout setUser={setUser} /> : <Navigate to="/" />}
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="market" element={<Market />} />
+            <Route path="portfolio" element={<Portfolio />} />
+            <Route path="watchlist" element={<Watchlist />} />
+            <Route path="transactions" element={<Transactions />} />
+            <Route path="leaderboard" element={<Leaderboard />} />
+            <Route path="alerts" element={<Alerts />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="analytics" element={<Analytics />} />
+          </Route>
+        </Routes>
+      </Router>
+    </ToastProvider>
   );
 }
 
