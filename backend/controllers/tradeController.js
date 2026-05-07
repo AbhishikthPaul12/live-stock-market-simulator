@@ -9,7 +9,9 @@ export const buyStock = async (req, res) => {
     const { symbol, quantity } = req.body;
     const userId = req.user._id;
 
-    if (!symbol || !quantity || quantity <= 0) {
+    console.log(`[BUY] Attempting purchase for user ${userId}: ${quantity} shares of ${symbol}`);
+
+    if (!symbol || isNaN(quantity) || Number(quantity) <= 0) {
       return res.status(400).json({ message: "Invalid symbol or quantity" });
     }
 
@@ -64,9 +66,11 @@ export const buyStock = async (req, res) => {
       user: userId,
       type: "BUY",
       symbol,
-      quantity,
-      price
+      quantity: Number(quantity),
+      price: Number(price)
     });
+
+    console.log(`[BUY] Transaction recorded in DB for user ${userId}`);
 
     res.json({ message: "Stock purchased successfully" });
 
@@ -81,6 +85,12 @@ export const sellStock = async (req, res) => {
   try {
     const { symbol, quantity } = req.body;
     const userId = req.user._id;
+
+    console.log(`[SELL] Attempting sale for user ${userId}: ${quantity} shares of ${symbol}`);
+
+    if (!symbol || isNaN(quantity) || Number(quantity) <= 0) {
+      return res.status(400).json({ message: "Invalid symbol or quantity" });
+    }
 
     // Fetch REAL price securely
     const { price } = await getStockPrice(symbol);
@@ -123,12 +133,6 @@ export const sellStock = async (req, res) => {
     // Fetch FRESH copy to ensure everything is synced before returning
     const updatedUser = await User.findById(userId);
 
-    res.json({ 
-      message: "Stock sold successfully", 
-      walletBalance: updatedUser.walletBalance,
-      realizedProfit: updatedUser.realizedProfit
-    });
-
     // Record transaction
     await Transaction.create({
       user: userId,
@@ -136,6 +140,14 @@ export const sellStock = async (req, res) => {
       symbol,
       quantity: Number(quantity),
       price: Number(price)
+    });
+
+    console.log(`[SELL] Transaction recorded in DB for user ${userId}`);
+
+    res.json({ 
+      message: "Stock sold successfully", 
+      walletBalance: updatedUser.walletBalance,
+      realizedProfit: updatedUser.realizedProfit
     });
 
   } catch (error) {

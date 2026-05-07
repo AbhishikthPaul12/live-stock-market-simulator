@@ -3,23 +3,24 @@ import Alert from '../models/Alert.js';
 
 // Helper: Google's S2 favicon service - guaranteed to return an image for any domain
 const gFav = (domain) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+const tLogo = (domain) => `https://cdn.tickerlogos.com/${domain}`;
 
 // Comprehensive Indian Market Asset Library (Nifty 50 + Major Midcaps)
 const INITIAL_STOCKS = [
   // CONGLOMERATE & ENERGY
   { symbol: "RELIANCE.NS", name: "Reliance Industries Ltd.", logo: gFav("ril.com") },
   { symbol: "ADANIENT.NS", name: "Adani Enterprises Ltd.", logo: gFav("adani.com") },
-  { symbol: "ONGC.NS",     name: "Oil & Natural Gas Corporation", logo: "https://upload.wikimedia.org/wikipedia/commons/e/e0/ONGC_Logo.png" },
-  { symbol: "NTPC.NS",     name: "NTPC Limited", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/NTPC_Logo.png/200px-NTPC_Logo.png" },
-  { symbol: "POWERGRID.NS",name: "Power Grid Corporation of India", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/POWERGRID_NEW_LOGO.png/200px-POWERGRID_NEW_LOGO.png" },
-  { symbol: "BPCL.NS",     name: "Bharat Petroleum Corporation", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Bharat_Petroleum_logo.svg/200px-Bharat_Petroleum_logo.svg.png" },
-  { symbol: "IOC.NS",      name: "Indian Oil Corporation", logo: gFav("iocl.com") },
-  { symbol: "COALINDIA.NS",name: "Coal India Limited", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Coal_India_logo.svg/200px-Coal_India_logo.svg.png" },
+  { symbol: "ONGC.NS",     name: "Oil & Natural Gas Corporation", logo: tLogo("ongcindia.com") },
+  { symbol: "NTPC.NS",     name: "NTPC Limited", logo: tLogo("ntpc.co.in") },
+  { symbol: "POWERGRID.NS",name: "Power Grid Corporation of India", logo: tLogo("powergridindia.com") },
+  { symbol: "BPCL.NS",     name: "Bharat Petroleum Corporation", logo: tLogo("bharatpetroleum.in") },
+  { symbol: "IOC.NS",      name: "Indian Oil Corporation", logo: tLogo("iocl.com") },
+  { symbol: "COALINDIA.NS",name: "Coal India Limited", logo: tLogo("coalindia.in") },
 
   // BANKING & FINANCE
   { symbol: "HDFCBANK.NS", name: "HDFC Bank Limited", logo: gFav("hdfcbank.com") },
   { symbol: "ICICIBANK.NS",name: "ICICI Bank Limited", logo: gFav("icicibank.com") },
-  { symbol: "SBIN.NS",     name: "State Bank of India", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/SBI-logo.svg/200px-SBI-logo.svg.png" },
+  { symbol: "SBIN.NS",     name: "State Bank of India", logo: tLogo("sbi.co.in") },
   { symbol: "KOTAKBANK.NS",name: "Kotak Mahindra Bank Ltd.", logo: gFav("kotak.com") },
   { symbol: "AXISBANK.NS", name: "Axis Bank Limited", logo: gFav("axisbank.com") },
   { symbol: "BAJFINANCE.NS",name: "Bajaj Finance Limited", logo: gFav("bajajfinserv.in") },
@@ -28,9 +29,9 @@ const INITIAL_STOCKS = [
   { symbol: "SBILIFE.NS",  name: "SBI Life Insurance Company", logo: gFav("sbilife.co.in") },
 
   // INFORMATION TECHNOLOGY
-  { symbol: "TCS.NS",      name: "Tata Consultancy Services", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Tata_Consultancy_Services_Logo.svg/200px-Tata_Consultancy_Services_Logo.svg.png" },
+  { symbol: "TCS.NS",      name: "Tata Consultancy Services", logo: tLogo("tcs.com") },
   { symbol: "INFY.NS",     name: "Infosys Limited", logo: gFav("infosys.com") },
-  { symbol: "HCLTECH.NS",  name: "HCL Technologies Limited", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/HCL_Technologies_logo.svg/200px-HCL_Technologies_logo.svg.png" },
+  { symbol: "HCLTECH.NS",  name: "HCL Technologies Limited", logo: tLogo("hcltech.com") },
   { symbol: "WIPRO.NS",    name: "Wipro Limited", logo: gFav("wipro.com") },
   { symbol: "TECHM.NS",    name: "Tech Mahindra Limited", logo: gFav("techmahindra.com") },
   { symbol: "LTIM.NS",     name: "LTIMindtree Limited", logo: gFav("ltimindtree.com") },
@@ -48,9 +49,9 @@ const INITIAL_STOCKS = [
   { symbol: "ITC.NS",      name: "ITC Limited", logo: gFav("itcportal.com") },
   { symbol: "NESTLEIND.NS",name: "Nestle India Limited", logo: gFav("nestle.in") },
   { symbol: "BRITANNIA.NS",name: "Britannia Industries Limited", logo: gFav("britannia.co.in") },
-  { symbol: "TITAN.NS",    name: "Titan Company Limited", logo: "https://upload.wikimedia.org/wikipedia/commons/e/e0/Titan_Company_Logo.png" },
-  { symbol: "ASIANPAINT.NS",name: "Asian Paints Limited", logo: gFav("asianpaints.com") },
-  { symbol: "DABUR.NS",    name: "Dabur India Limited", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Dabur_logo.svg/200px-Dabur_logo.svg.png" },
+  { symbol: "TITAN.NS",    name: "Titan Company Limited", logo: tLogo("titan.co.in") },
+  { symbol: "ASIANPAINT.NS",name: "Asian Paints Limited", logo: tLogo("asianpaints.com") },
+  { symbol: "DABUR.NS",    name: "Dabur India Limited", logo: tLogo("dabur.com") },
 
   // METALS & MINING
   { symbol: "TATASTEEL.NS",name: "Tata Steel Limited", logo: gFav("tatasteel.com") },
@@ -67,7 +68,7 @@ const INITIAL_STOCKS = [
   // INDUSTRIALS & INFRASTRUCTURE
   { symbol: "LT.NS",       name: "Larsen & Toubro Limited", logo: gFav("larsentoubro.com") },
   { symbol: "ULTRACEMCO.NS",name: "UltraTech Cement Limited", logo: gFav("ultratechcement.com") },
-  { symbol: "GRASIM.NS",   name: "Grasim Industries Limited", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Aditya_Birla_Group_Logo.svg/200px-Aditya_Birla_Group_Logo.svg.png" },
+  { symbol: "GRASIM.NS",   name: "Grasim Industries Limited", logo: tLogo("grasim.com") },
   { symbol: "ADANIPORTS.NS",name: "Adani Ports and SEZ Ltd.", logo: gFav("adaniports.com") },
   { symbol: "BHARTIARTL.NS",name: "Bharti Airtel Limited", logo: gFav("airtel.in") }
 ];
