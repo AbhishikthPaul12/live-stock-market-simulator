@@ -26,6 +26,16 @@ export const getAlerts = async () => {
   return res.data;
 };
 
+export const createAlert = async (alertData) => {
+  const res = await axios.post("/alerts", alertData);
+  return res.data;
+};
+
+export const deleteAlert = async (id) => {
+  const res = await axios.delete(`/alerts/${id}`);
+  return res.data;
+};
+
 // PORTFOLIO
 export const getPortfolio = async () => {
   const res = await axios.get("/portfolio");
