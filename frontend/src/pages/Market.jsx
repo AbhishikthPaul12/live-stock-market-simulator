@@ -3,8 +3,10 @@ import { buyStock } from "../api/trade.js";
 import { getAllStocks } from "../api/data.js";
 import ChartModal from "../components/ChartModal.jsx";
 import { useStockPrices } from "../hooks/useStockPrices.js";
+import { useToast } from "../context/ToastContext.jsx";
 
 function Market() {
+  const { addToast } = useToast();
   const [searchInput, setSearchInput] = useState("");
   const [activeSymbol, setActiveSymbol] = useState("");
   const [chartStock, setChartStock] = useState(null);
@@ -37,9 +39,9 @@ function Market() {
   async function handleBuy(symbol, qty) {
     try {
       await buyStock({ symbol, quantity: qty });
-      alert("Trade executed successfully!");
+      addToast(`${qty} shares of ${symbol} acquired successfully!`, "success");
     } catch (error) {
-      alert(error.response?.data?.message || error.message || "Trade failed.");
+      addToast(error.response?.data?.message || error.message || "Trade failed.", "error");
     }
   }
 
@@ -50,9 +52,9 @@ function Market() {
         symbol: stockToAdd.symbol, 
         name: stockToAdd.name 
       });
-      alert("Added to Watchlist!");
+      addToast(`${stockToAdd.symbol} added to your watchlist.`, "success");
     } catch (error) {
-      alert(error.response?.data?.message || "Already in watchlist or failed to add.");
+      addToast(error.response?.data?.message || "Already in watchlist or failed to add.", "error");
     }
   }
 

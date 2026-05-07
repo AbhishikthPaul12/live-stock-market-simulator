@@ -36,7 +36,7 @@ const INITIAL_STOCKS = [
   { symbol: "PEP", name: "PepsiCo Inc", price: 175.40, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/PEP.png" },
   { symbol: "T", name: "AT&T Inc", price: 15.60, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/T.png" },
   { symbol: "VZ", name: "Verizon", price: 35.80, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/VZ.png" },
-  { symbol: "CSCO", name: "Cisco Systems", price: 52.30, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/CSCO.png" },
+  { symbol: "CSCO", name: "Cisco Systems", price: 52.30, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/CSCO.svg" },
   { symbol: "ORCL", name: "Oracle Corp", price: 110.15, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/ORCL.png" },
   { symbol: "CRM", name: "Salesforce Inc", price: 220.40, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/CRM.png" },
   { symbol: "ADBE", name: "Adobe Inc", price: 540.80, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/ADBE.png" },

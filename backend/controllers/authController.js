@@ -89,13 +89,12 @@ export const forgotPassword = async (req, res) => {
     // Generate a simple reset token (in real app, use crypto.randomBytes)
     const resetToken = Math.random().toString(36).slice(-8).toUpperCase();
     
-    // Save token (you might want to add a field to User model, but I'll just use it directly for now)
-    // Actually, I should add it to the model for security.
+    // Save token 
     user.resetPasswordToken = resetToken;
     user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
 
-    // In a real app, send email. Here, we just return it for the simulation.
+    //just return for the simulation.
     res.json({ 
       message: "Password reset token generated", 
       resetToken: resetToken,

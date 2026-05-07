@@ -4,7 +4,10 @@ import { sellStock } from "../api/trade.js";
 import { getProfile } from "../api/auth.js";
 import SellModal from "../components/SellModal";
 
+import { useToast } from "../context/ToastContext.jsx";
+
 function Portfolio() {
+  const { addToast } = useToast();
   const [portfolio, setPortfolio] = useState([]);
   const [selectedStock, setSelectedStock] = useState(null);
   const [realizedProfit, setRealizedProfit] = useState(0);
@@ -84,10 +87,10 @@ function Portfolio() {
       const p = await getPortfolio();
       setPortfolio(p);
       
-      alert(res.message || "Stock sold successfully!");
+      addToast(res.message || `Sold ${qty} shares of ${symbol} successfully!`, "success");
     } catch (err) {
       console.error("Sell error:", err);
-      alert(err.response?.data?.message || "Failed to sell stock.");
+      addToast(err.response?.data?.message || "Failed to sell stock.", "error");
       
       const [p, profile] = await Promise.all([getPortfolio(), getProfile()]);
       setPortfolio(p);
