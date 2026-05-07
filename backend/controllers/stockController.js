@@ -28,10 +28,11 @@ export const getStockBySymbol = async (req, res) => {
 export const getStockHistory = async (req, res) => {
   try {
     const { symbol } = req.params;
+    const { timeframe } = req.query;
     if (!symbol) {
       return res.status(400).json({ message: 'Stock symbol is required' });
     }
-    const history = await fetchStockHistory(symbol);
+    const history = await fetchStockHistory(symbol, timeframe);
     res.json(history);
   } catch (error) {
     res.status(500).json({ message: error.message || 'Error fetching history' });

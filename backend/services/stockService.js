@@ -1,59 +1,84 @@
 import axios from 'axios';
 import Alert from '../models/Alert.js';
 
-// 20 Top Tech Companies
-// 40+ Diverse Companies across sectors
+// Helper: Google's S2 favicon service - guaranteed to return an image for any domain
+const gFav = (domain) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+
+// Comprehensive Indian Market Asset Library (Nifty 50 + Major Midcaps)
 const INITIAL_STOCKS = [
-  { symbol: "AAPL", name: "Apple Inc", price: 175.50, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/AAPL.png" },
-  { symbol: "MSFT", name: "Microsoft Corp", price: 330.20, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/MSFT.png" },
-  { symbol: "NVDA", name: "NVIDIA Corp", price: 460.18, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/NVDA.png" },
-  { symbol: "GOOGL", name: "Alphabet Inc", price: 135.40, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/GOOG.png" },
-  { symbol: "AMZN", name: "Amazon.com Inc", price: 130.00, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/AMZN.png" },
-  { symbol: "TSLA", name: "Tesla Inc", price: 240.50, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/TSLA.png" },
-  { symbol: "META", name: "Meta Platforms", price: 300.10, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/FB.png" },
-  { symbol: "NFLX", name: "Netflix Inc", price: 400.20, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/NFLX.png" },
-  { symbol: "AMD", name: "Advanced Micro Devices", price: 105.30, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/AMD.png" },
-  { symbol: "INTC", name: "Intel Corp", price: 35.20, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/INTC.png" },
-  { symbol: "V", name: "Visa Inc", price: 230.15, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/V.png" },
-  { symbol: "MA", name: "Mastercard Inc", price: 400.80, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/MA.png" },
-  { symbol: "JPM", name: "JPMorgan Chase", price: 145.60, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/JPM.png" },
-  { symbol: "BAC", name: "Bank of America", price: 28.40, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/BAC.png" },
-  { symbol: "GS", name: "Goldman Sachs", price: 320.50, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/GS.png" },
-  { symbol: "WMT", name: "Walmart Inc", price: 160.25, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/WMT.png" },
-  { symbol: "COST", name: "Costco Wholesale", price: 550.30, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/COST.png" },
-  { symbol: "JNJ", name: "Johnson & Johnson", price: 165.40, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/JNJ.png" },
-  { symbol: "PFE", name: "Pfizer Inc", price: 30.10, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/PFE.png" },
-  { symbol: "UNH", name: "UnitedHealth Group", price: 480.60, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/UNH.png" },
-  { symbol: "XOM", name: "Exxon Mobil", price: 110.20, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/XOM.png" },
-  { symbol: "CVX", name: "Chevron Corp", price: 165.70, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/CVX.png" },
-  { symbol: "BA", name: "Boeing Co", price: 210.40, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/BA.png" },
-  { symbol: "GE", name: "General Electric", price: 115.80, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/GE.png" },
-  { symbol: "DIS", name: "Walt Disney Co", price: 95.30, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/DIS.png" },
-  { symbol: "NKE", name: "Nike Inc", price: 105.15, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/NKE.png" },
-  { symbol: "SBUX", name: "Starbucks Corp", price: 98.40, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/SBUX.png" },
-  { symbol: "MCD", name: "McDonald's Corp", price: 285.60, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/MCD.png" },
-  { symbol: "KO", name: "Coca-Cola Co", price: 58.20, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/KO.png" },
-  { symbol: "PEP", name: "PepsiCo Inc", price: 175.40, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/PEP.png" },
-  { symbol: "T", name: "AT&T Inc", price: 15.60, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/T.png" },
-  { symbol: "VZ", name: "Verizon", price: 35.80, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/VZ.png" },
-  { symbol: "CSCO", name: "Cisco Systems", price: 52.30, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/CSCO.svg" },
-  { symbol: "ORCL", name: "Oracle Corp", price: 110.15, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/ORCL.png" },
-  { symbol: "CRM", name: "Salesforce Inc", price: 220.40, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/CRM.png" },
-  { symbol: "ADBE", name: "Adobe Inc", price: 540.80, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/ADBE.png" },
-  { symbol: "PYPL", name: "PayPal Holdings", price: 60.10, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/PYPL.png" },
-  { symbol: "SQ", name: "Block Inc", price: 55.40, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/SQ.png" },
-  { symbol: "SHOP", name: "Shopify Inc", price: 65.20, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/SHOP.png" },
-  { symbol: "UBER", name: "Uber Technologies", price: 45.30, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/UBER.png" },
-  { symbol: "ABNB", name: "Airbnb Inc", price: 130.15, logo: "https://static2.finnhub.io/file/publicdatany/finnhubimage/stock_logo/ABNB.png" }
+  // CONGLOMERATE & ENERGY
+  { symbol: "RELIANCE.NS", name: "Reliance Industries Ltd.", logo: gFav("ril.com") },
+  { symbol: "ADANIENT.NS", name: "Adani Enterprises Ltd.", logo: gFav("adani.com") },
+  { symbol: "ONGC.NS",     name: "Oil & Natural Gas Corporation", logo: "https://upload.wikimedia.org/wikipedia/commons/e/e0/ONGC_Logo.png" },
+  { symbol: "NTPC.NS",     name: "NTPC Limited", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/NTPC_Logo.png/200px-NTPC_Logo.png" },
+  { symbol: "POWERGRID.NS",name: "Power Grid Corporation of India", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/POWERGRID_NEW_LOGO.png/200px-POWERGRID_NEW_LOGO.png" },
+  { symbol: "BPCL.NS",     name: "Bharat Petroleum Corporation", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Bharat_Petroleum_logo.svg/200px-Bharat_Petroleum_logo.svg.png" },
+  { symbol: "IOC.NS",      name: "Indian Oil Corporation", logo: gFav("iocl.com") },
+  { symbol: "COALINDIA.NS",name: "Coal India Limited", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Coal_India_logo.svg/200px-Coal_India_logo.svg.png" },
+
+  // BANKING & FINANCE
+  { symbol: "HDFCBANK.NS", name: "HDFC Bank Limited", logo: gFav("hdfcbank.com") },
+  { symbol: "ICICIBANK.NS",name: "ICICI Bank Limited", logo: gFav("icicibank.com") },
+  { symbol: "SBIN.NS",     name: "State Bank of India", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/SBI-logo.svg/200px-SBI-logo.svg.png" },
+  { symbol: "KOTAKBANK.NS",name: "Kotak Mahindra Bank Ltd.", logo: gFav("kotak.com") },
+  { symbol: "AXISBANK.NS", name: "Axis Bank Limited", logo: gFav("axisbank.com") },
+  { symbol: "BAJFINANCE.NS",name: "Bajaj Finance Limited", logo: gFav("bajajfinserv.in") },
+  { symbol: "BAJAJFINSV.NS",name: "Bajaj Finserv Limited", logo: gFav("bajajfinserv.in") },
+  { symbol: "HDFCLIFE.NS", name: "HDFC Life Insurance Company", logo: gFav("hdfclife.com") },
+  { symbol: "SBILIFE.NS",  name: "SBI Life Insurance Company", logo: gFav("sbilife.co.in") },
+
+  // INFORMATION TECHNOLOGY
+  { symbol: "TCS.NS",      name: "Tata Consultancy Services", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Tata_Consultancy_Services_Logo.svg/200px-Tata_Consultancy_Services_Logo.svg.png" },
+  { symbol: "INFY.NS",     name: "Infosys Limited", logo: gFav("infosys.com") },
+  { symbol: "HCLTECH.NS",  name: "HCL Technologies Limited", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/HCL_Technologies_logo.svg/200px-HCL_Technologies_logo.svg.png" },
+  { symbol: "WIPRO.NS",    name: "Wipro Limited", logo: gFav("wipro.com") },
+  { symbol: "TECHM.NS",    name: "Tech Mahindra Limited", logo: gFav("techmahindra.com") },
+  { symbol: "LTIM.NS",     name: "LTIMindtree Limited", logo: gFav("ltimindtree.com") },
+
+  // AUTOMOTIVE
+  { symbol: "TATAMOTORS.NS",name: "Tata Motors Limited", logo: gFav("tatamotors.com") },
+  { symbol: "MARUTI.NS",   name: "Maruti Suzuki India Limited", logo: gFav("marutisuzuki.com") },
+  { symbol: "MAHINDRA.NS", name: "Mahindra & Mahindra Limited", logo: gFav("mahindra.com") },
+  { symbol: "EICHERMOT.NS",name: "Eicher Motors Limited", logo: gFav("eichermotors.com") },
+  { symbol: "HEROMOTOCO.NS",name: "Hero MotoCorp Limited", logo: gFav("heromotocorp.com") },
+  { symbol: "BAJAJ-AUTO.NS",name: "Bajaj Auto Limited", logo: gFav("bajajauto.com") },
+
+  // FMCG & CONSUMPTION
+  { symbol: "HINDUNILVR.NS",name: "Hindustan Unilever Limited", logo: gFav("hul.co.in") },
+  { symbol: "ITC.NS",      name: "ITC Limited", logo: gFav("itcportal.com") },
+  { symbol: "NESTLEIND.NS",name: "Nestle India Limited", logo: gFav("nestle.in") },
+  { symbol: "BRITANNIA.NS",name: "Britannia Industries Limited", logo: gFav("britannia.co.in") },
+  { symbol: "TITAN.NS",    name: "Titan Company Limited", logo: "https://upload.wikimedia.org/wikipedia/commons/e/e0/Titan_Company_Logo.png" },
+  { symbol: "ASIANPAINT.NS",name: "Asian Paints Limited", logo: gFav("asianpaints.com") },
+  { symbol: "DABUR.NS",    name: "Dabur India Limited", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Dabur_logo.svg/200px-Dabur_logo.svg.png" },
+
+  // METALS & MINING
+  { symbol: "TATASTEEL.NS",name: "Tata Steel Limited", logo: gFav("tatasteel.com") },
+  { symbol: "JSWSTEEL.NS", name: "JSW Steel Limited", logo: gFav("jsw.in") },
+  { symbol: "HINDALCO.NS", name: "Hindalco Industries Limited", logo: gFav("hindalco.com") },
+
+  // HEALTHCARE & PHARMA
+  { symbol: "SUNPHARMA.NS",name: "Sun Pharmaceutical Industries", logo: gFav("sunpharma.com") },
+  { symbol: "CIPLA.NS",    name: "Cipla Limited", logo: gFav("cipla.com") },
+  { symbol: "DRREDDY.NS",  name: "Dr. Reddy's Laboratories", logo: gFav("drreddys.com") },
+  { symbol: "APOLLOHOSP.NS",name: "Apollo Hospitals Enterprise", logo: gFav("apollohospitals.com") },
+  { symbol: "DIVISLAB.NS", name: "Divi's Laboratories Ltd.", logo: gFav("divislabs.com") },
+
+  // INDUSTRIALS & INFRASTRUCTURE
+  { symbol: "LT.NS",       name: "Larsen & Toubro Limited", logo: gFav("larsentoubro.com") },
+  { symbol: "ULTRACEMCO.NS",name: "UltraTech Cement Limited", logo: gFav("ultratechcement.com") },
+  { symbol: "GRASIM.NS",   name: "Grasim Industries Limited", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Aditya_Birla_Group_Logo.svg/200px-Aditya_Birla_Group_Logo.svg.png" },
+  { symbol: "ADANIPORTS.NS",name: "Adani Ports and SEZ Ltd.", logo: gFav("adaniports.com") },
+  { symbol: "BHARTIARTL.NS",name: "Bharti Airtel Limited", logo: gFav("airtel.in") }
 ];
 
-// Helper to generate deterministic mock price based on symbol
+// Deterministic price generator scaled to INR values
 const generateDeterministicPrice = (symbol) => {
   let hash = 0;
   for (let i = 0; i < symbol.length; i++) {
     hash = symbol.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const base = 50 + (Math.abs(hash) % 800); // Price between 50 and 850
+  const base = 200 + (Math.abs(hash) % 4500);
   const cents = (Math.abs(hash) % 100) / 100;
   return Number((base + cents).toFixed(2));
 };
@@ -61,190 +86,137 @@ const generateDeterministicPrice = (symbol) => {
 // In-Memory Cache
 const stockCache = {};
 
-// Initialize Cache
 INITIAL_STOCKS.forEach(stock => {
   stockCache[stock.symbol] = {
     ...stock,
+    price: generateDeterministicPrice(stock.symbol),
     change: 0
   };
 });
 
-// TRUE REAL-TIME ENGINE: Fetch 1 stock from Finnhub every 1.5 seconds.
+// Batch Real-Time Engine: 5 stocks per second
 let currentIndex = 0;
+const BATCH_SIZE = 5;
 
 setInterval(async () => {
-  const sym = INITIAL_STOCKS[currentIndex].symbol;
-  try {
-    const apiKey = process.env.FINNHUB_API_KEY;
-    if (!apiKey) throw new Error("No API Key");
-    
-    const res = await axios.get(`https://finnhub.io/api/v1/quote`, {
-      params: { symbol: sym, token: apiKey }
-    });
+  const apiKey = process.env.FINNHUB_API_KEY;
+  if (!apiKey) return;
 
-    if (res.data && res.data.c) {
-      const fluctuation = 1 + (Math.random() - 0.5) * 0.0002;
-      stockCache[sym].price = Number((res.data.c * fluctuation).toFixed(2));
-      stockCache[sym].change = Number(res.data.d.toFixed(2));
-    } else {
-      throw new Error("Invalid response");
-    }
+  const batch = INITIAL_STOCKS.slice(currentIndex, currentIndex + BATCH_SIZE);
+  if (batch.length === 0) { currentIndex = 0; return; }
 
-    // CHECK ALERTS FOR THIS SYMBOL
-    const currentPrice = stockCache[sym].price;
-    const triggeredAlerts = await Alert.find({ symbol: sym, triggered: false });
-    for (const alert of triggeredAlerts) {
-      if ((alert.type === 'ABOVE' && currentPrice >= alert.targetPrice) ||
-          (alert.type === 'BELOW' && currentPrice <= alert.targetPrice)) {
-        alert.triggered = true;
-        await alert.save();
+  await Promise.all(batch.map(async (stock) => {
+    const sym = stock.symbol;
+    try {
+      const res = await axios.get(`https://finnhub.io/api/v1/quote`, {
+        params: { symbol: sym, token: apiKey }
+      });
+
+      if (res.data && res.data.c) {
+        const fluctuation = 1 + (Math.random() - 0.5) * 0.0002;
+        stockCache[sym].price = Number((res.data.c * fluctuation).toFixed(2));
+        stockCache[sym].change = Number(res.data.d.toFixed(2));
       }
-    }
-  } catch (error) {
-    // Deterministic Mock movement if API fails or key is missing
-    const currentPrice = stockCache[sym].price;
-    const fluctuation = 1 + (Math.random() - 0.5) * 0.0005;
-    stockCache[sym].price = Number((currentPrice * fluctuation).toFixed(2));
-    stockCache[sym].change = Number(((stockCache[sym].price - currentPrice) / currentPrice * 100).toFixed(2));
 
-    // CHECK ALERTS FOR MOCK PRICE
-    const triggeredAlerts = await Alert.find({ symbol: sym, triggered: false });
-    for (const alert of triggeredAlerts) {
-      if ((alert.type === 'ABOVE' && stockCache[sym].price >= alert.targetPrice) ||
-          (alert.type === 'BELOW' && stockCache[sym].price <= alert.targetPrice)) {
-        alert.triggered = true;
-        await alert.save();
+      const currentPrice = stockCache[sym].price;
+      const triggeredAlerts = await Alert.find({ symbol: sym, triggered: false });
+      for (const alert of triggeredAlerts) {
+        if ((alert.type === 'ABOVE' && currentPrice >= alert.targetPrice) ||
+            (alert.type === 'BELOW' && currentPrice <= alert.targetPrice)) {
+          alert.triggered = true;
+          await alert.save();
+        }
       }
+    } catch {
+      const currentPrice = stockCache[sym].price;
+      const fluctuation = 1 + (Math.random() - 0.5) * 0.0005;
+      stockCache[sym].price = Number((currentPrice * fluctuation).toFixed(2));
+      stockCache[sym].change = Number(((stockCache[sym].price - currentPrice) / currentPrice * 100).toFixed(2));
     }
-  }
+  }));
 
-  currentIndex = (currentIndex + 1) % INITIAL_STOCKS.length;
-}, 1500);
+  currentIndex = (currentIndex + BATCH_SIZE) % INITIAL_STOCKS.length;
+}, 1000);
 
-
-export const getAllStocks = async () => {
-  return Object.values(stockCache);
-};
+export const getAllStocks = async () => Object.values(stockCache);
 
 export const getStockPrice = async (symbol) => {
+  const sym = symbol.toUpperCase();
+  if (stockCache[sym]) return { price: stockCache[sym].price, change: stockCache[sym].change };
   try {
-    const sym = symbol.toUpperCase();
-    
-    if (stockCache[sym]) {
-      return { 
-        price: stockCache[sym].price, 
-        change: stockCache[sym].change 
-      };
-    }
-
     const apiKey = process.env.FINNHUB_API_KEY;
-    if (!apiKey) throw new Error('API Key missing');
-
-    const res = await axios.get(`https://finnhub.io/api/v1/quote`, {
-      params: { symbol: sym, token: apiKey }
-    });
-
-    if (res.data.c) {
-      return { 
-        price: Number(res.data.c.toFixed(2)), 
-        change: Number(res.data.d.toFixed(2)) 
-      };
-    }
-    throw new Error("Not found");
-  } catch (error) {
-    const price = generateDeterministicPrice(symbol.toUpperCase());
-    return { price, change: 0.25 };
+    const res = await axios.get(`https://finnhub.io/api/v1/quote`, { params: { symbol: sym, token: apiKey } });
+    if (res.data.c) return { price: res.data.c, change: res.data.d };
+    throw new Error();
+  } catch {
+    return { price: generateDeterministicPrice(sym), change: 0.15 };
   }
 };
 
 export const getStockData = async (symbol) => {
+  const sym = symbol.toUpperCase();
+  if (stockCache[sym]) return stockCache[sym];
   try {
-    const sym = symbol.toUpperCase();
-
-    if (stockCache[sym]) {
-      return stockCache[sym];
-    }
-
     const apiKey = process.env.FINNHUB_API_KEY;
-    if (!apiKey) throw new Error('API Key missing');
-    
-    const [quoteRes, profileRes] = await Promise.all([
+    const [quote, profile] = await Promise.all([
       axios.get(`https://finnhub.io/api/v1/quote`, { params: { symbol: sym, token: apiKey } }),
       axios.get(`https://finnhub.io/api/v1/stock/profile2`, { params: { symbol: sym, token: apiKey } })
     ]);
-
-    const quote = quoteRes.data;
-    const profile = profileRes.data;
-    
-    if (quote.c === 0 && !profile.name) {
-       throw new Error("Not found");
+    if (quote.data.c) {
+      return { symbol: sym, name: profile.data.name || sym, price: quote.data.c, change: quote.data.d, logo: profile.data.logo || gFav("moneycontrol.com") };
     }
-
-    return {
-      symbol: sym,
-      name: profile.name || sym,
-      price: Number(quote.c.toFixed(2)),
-      change: Number(quote.d.toFixed(2)),
-      logo: profile.logo || ""
-    };
-  } catch (error) {
-    const price = generateDeterministicPrice(symbol.toUpperCase());
-    return {
-      symbol: symbol.toUpperCase(),
-      name: `${symbol.toUpperCase()} Global Systems`,
-      price: price,
-      change: 0.85,
-      logo: ""
-    };
+    throw new Error();
+  } catch {
+    return { symbol: sym, name: `${sym} India`, price: generateDeterministicPrice(sym), change: 0.45, logo: "" };
   }
 };
 
-const generateMockHistory = async (symbol) => {
+const generateMockHistory = async (symbol, timeframe = '1M') => {
   const { price } = await getStockPrice(symbol);
-  const basePrice = price || 150;
+  const basePrice = price || 1500;
   const history = [];
-  const to = Math.floor(Date.now() / 1000);
-  
-  for (let i = 30; i >= 0; i--) {
-    const timestamp = to - (i * 24 * 60 * 60);
-    const noise = (Math.random() - 0.5) * (basePrice * 0.05);
+  const now = Date.now();
+  let points = 30, interval = 24 * 60 * 60 * 1000;
+  if (timeframe === '1D') { points = 24; interval = 60 * 60 * 1000; }
+  if (timeframe === '1W') { points = 7; interval = 24 * 60 * 60 * 1000; }
+  if (timeframe === '3YRS') { points = 12; interval = 90 * 24 * 60 * 60 * 1000; }
+  for (let i = points; i >= 0; i--) {
+    const timestamp = now - (i * interval);
+    const noise = (Math.random() - 0.5) * (basePrice * 0.08);
     history.push({
-      date: new Date(timestamp * 1000).toLocaleDateString(),
+      date: new Date(timestamp).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
       price: parseFloat((basePrice + noise).toFixed(2))
     });
   }
   return history;
 };
 
-export const getStockHistory = async (symbol) => {
+export const getStockHistory = async (symbol, timeframe = '1M') => {
   try {
     const apiKey = process.env.FINNHUB_API_KEY;
-    if (!apiKey) throw new Error('FINNHUB_API_KEY is missing');
-
     const to = Math.floor(Date.now() / 1000);
-    const from = to - (30 * 24 * 60 * 60);
-
-    const res = await axios.get(`https://finnhub.io/api/v1/stock/candle`, {
-      params: {
-        symbol: symbol.toUpperCase(),
-        resolution: 'D',
-        from,
-        to,
-        token: apiKey
-      }
-    });
-
-    if (res.data.s !== 'ok' || res.data.error) {
-      console.warn("Finnhub candle data restricted, returning mock history.");
-      return await generateMockHistory(symbol);
+    let from, resolution;
+    switch (timeframe) {
+      case '1D': from = to - 86400; resolution = '5'; break;
+      case '1W': from = to - 604800; resolution = '30'; break;
+      case '1M': from = to - 2592000; resolution = 'D'; break;
+      case '3M': from = to - 7776000; resolution = 'D'; break;
+      case '6M': from = to - 15552000; resolution = 'D'; break;
+      case '1YR': from = to - 31536000; resolution = 'W'; break;
+      case '3YRS': from = to - 94608000; resolution = 'M'; break;
+      default: from = to - 2592000; resolution = 'D';
     }
-
-    return res.data.t.map((time, i) => ({
-      date: new Date(time * 1000).toLocaleDateString(),
-      price: res.data.c[i]
-    }));
-  } catch (error) {
-    console.warn("History API Error, returning mock history:", error.message);
-    return await generateMockHistory(symbol);
+    const res = await axios.get(`https://finnhub.io/api/v1/stock/candle`, {
+      params: { symbol: symbol.toUpperCase(), resolution, from, to, token: apiKey }
+    });
+    if (res.data.s === 'ok') {
+      return res.data.t.map((t, i) => ({
+        date: new Date(t * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: timeframe === '3YRS' ? 'numeric' : undefined }),
+        price: Number(res.data.c[i].toFixed(2))
+      }));
+    }
+    throw new Error();
+  } catch {
+    return await generateMockHistory(symbol, timeframe);
   }
 };
