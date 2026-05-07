@@ -65,7 +65,7 @@ export const getStockData = async (symbol) => {
   return res.data;
 };
 
-export const getStockHistory = async (symbol) => {
-  const res = await axios.get(`/stocks/${symbol}/history`);
+export const getStockHistory = async (symbol, timeframe = '1M') => {
+  const res = await axios.get(`/stocks/${symbol}/history?timeframe=${timeframe}`);
   return res.data;
 };
