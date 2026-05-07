@@ -3,7 +3,8 @@ import {
   getUserWallet, 
   getWatchlist, 
   addToWatchlist, 
-  removeFromWatchlist 
+  removeFromWatchlist,
+  updateProfile
 } from "../controllers/userController.js";
 import protect from "../middleware/authMiddleware.js";
 
@@ -15,5 +16,6 @@ router.get("/wallet", protect, getUserWallet);
 router.get("/watchlist", protect, getWatchlist);
 router.post("/watchlist", protect, addToWatchlist);
 router.delete("/watchlist/:symbol", protect, removeFromWatchlist);
+router.put("/profile", protect, updateProfile);
 
 export default router;

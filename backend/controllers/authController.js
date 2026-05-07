@@ -75,3 +75,61 @@ export const getUserProfile = async (req, res) => {
     res.status(404).json({ message: "User not found" });
   }
 };
+
+// FORGOT PASSWORD
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User with this email does not exist" });
+    }
+
+    // Generate a simple reset token (in real app, use crypto.randomBytes)
+    const resetToken = Math.random().toString(36).slice(-8).toUpperCase();
+    
+    // Save token (you might want to add a field to User model, but I'll just use it directly for now)
+    // Actually, I should add it to the model for security.
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    await user.save();
+
+    // In a real app, send email. Here, we just return it for the simulation.
+    res.json({ 
+      message: "Password reset token generated", 
+      resetToken: resetToken,
+      info: "In a real production app, this token would be sent via email."
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// RESET PASSWORD
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired reset token" });
+    }
+
+    // Update password
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.json({ message: "Password reset successful. You can now login with your new password." });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

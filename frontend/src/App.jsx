@@ -12,6 +12,9 @@ import Watchlist from "./pages/Watchlist";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
+import Analytics from "./pages/Analytics";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -38,6 +41,9 @@ function App() {
           element={!user ? <Register /> : <Navigate to="/dashboard" />}
         />
 
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+
         {/* DASHBOARD */}
         <Route
           path="/dashboard"
@@ -51,6 +57,7 @@ function App() {
           <Route path="leaderboard" element={<Leaderboard />} />
           <Route path="alerts" element={<Alerts />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="analytics" element={<Analytics />} />
         </Route>
 
       </Routes>
