@@ -27,7 +27,7 @@ const StockCard = ({ s, onChartOpen }) => {
     setShowInsight(true);
     setInsightLoading(true);
     try {
-      const data = await getStockInsight(s.symbol, s.price, s.change || 0);
+      const data = await getStockInsight(s.symbol, s.price, s.change || 0, s.name);
       setInsight(data);
     } catch {
       setInsight({ summary: "AI insight temporarily unavailable.", sentiment: "Neutral", riskLevel: "Medium" });

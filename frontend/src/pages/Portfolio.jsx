@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { getPortfolio } from "../api/data.js";
 import { sellStock } from "../api/trade.js";
 import { getProfile } from "../api/auth.js";
-import { getStockInsight } from "../api/ai.js";
+import { getStockInsight, getPortfolioAnalysis } from "../api/ai.js";
 import SellModal from "../components/SellModal";
 import RiskBadge from "../components/ai/RiskBadge.jsx";
 import LoadingSkeleton from "../components/ai/LoadingSkeleton.jsx";
@@ -197,6 +197,21 @@ function Portfolio() {
   const totalProfit = realizedProfit + unrealizedProfit;
   const isPositive = totalProfit >= 0;
 
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const handleAIAnalyze = async () => {
+    setAiLoading(true);
+    try {
+      const data = await getPortfolioAnalysis(portfolio);
+      setAiAnalysis(data);
+    } catch (err) {
+      addToast("Portfolio analysis failed.", "error");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-slate-50">
@@ -250,6 +265,68 @@ function Portfolio() {
               </h2>
             </div>
             <p className="text-[10px] font-black opacity-60 uppercase tracking-widest mt-8">Aggregate Portfolio Return</p>
+          </div>
+        </div>
+
+        {/* AI PORTFOLIO ANALYSIS */}
+        <div className="mb-12">
+          <div className="bg-white rounded-[40px] border border-slate-200 shadow-sm overflow-hidden p-10 relative group">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full -mr-32 -mt-32 opacity-40 group-hover:scale-110 transition-transform duration-700"></div>
+            
+            <div className="relative z-10">
+              <div className="flex justify-between items-center mb-8">
+                 <div>
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">AI Portfolio Insights</h3>
+                    <p className="text-slate-500 text-sm font-medium mt-1">Deep analysis of your holdings using Llama-3.2.</p>
+                 </div>
+                 <button 
+                   onClick={handleAIAnalyze}
+                   disabled={aiLoading || portfolio.length === 0}
+                   className="bg-indigo-600 text-white px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-50"
+                 >
+                   {aiLoading ? "Analyzing..." : "Analyze Portfolio"}
+                 </button>
+              </div>
+
+              {!aiAnalysis ? (
+                <div className="bg-slate-50 border border-slate-100 rounded-3xl p-12 text-center">
+                   <p className="text-slate-400 font-bold text-sm">Click the button above to generate a full AI analysis of your current portfolio.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                   <div className="bg-indigo-50 border border-indigo-100 rounded-3xl p-8 text-center">
+                      <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Risk Score</p>
+                      <h4 className="text-5xl font-black text-indigo-700 tracking-tighter">{aiAnalysis.score}</h4>
+                      <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full mt-2 inline-block">
+                        Llama-3.2 Powered
+                      </span>
+                   </div>
+                   <div className="lg:col-span-3 space-y-6">
+                      <div>
+                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Executive Summary</p>
+                         <p className="text-slate-600 font-medium leading-relaxed">{aiAnalysis.summary}</p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                         <div className="bg-white border border-slate-100 rounded-2xl p-6">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Diversification</p>
+                            <p className="text-xs text-slate-500 font-medium">{aiAnalysis.diversification}</p>
+                         </div>
+                         <div className="bg-white border border-slate-100 rounded-2xl p-6">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Suggestions</p>
+                            <ul className="space-y-2">
+                               {aiAnalysis.suggestions?.map((s, i) => (
+                                 <li key={i} className="text-xs text-slate-600 flex items-start gap-2">
+                                    <span className="text-indigo-500 mt-1 font-black">→</span>
+                                    {s}
+                                 </li>
+                               ))}
+                            </ul>
+                         </div>
+                      </div>
+                   </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
