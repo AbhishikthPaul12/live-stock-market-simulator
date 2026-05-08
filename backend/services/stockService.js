@@ -103,7 +103,6 @@ const BATCH_SIZE = 5;
 
 setInterval(async () => {
   const apiKey = process.env.FINNHUB_API_KEY;
-  if (!apiKey) return;
 
   const batch = INITIAL_STOCKS.slice(currentIndex, currentIndex + BATCH_SIZE);
   if (batch.length === 0) { currentIndex = 0; return; }
@@ -120,18 +119,25 @@ setInterval(async () => {
         stockCache[sym].price = Number((res.data.c * fluctuation).toFixed(2));
         stockCache[sym].change = Number(res.data.d.toFixed(2));
       }
-
-      // Record session history point
+    } catch {
       const currentPrice = stockCache[sym].price;
-      const historyPoint = {
-        date: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-        price: currentPrice,
-        timestamp: Date.now()
-      };
-      
-      sessionHistory[sym].push(historyPoint);
-      if (sessionHistory[sym].length > 100) sessionHistory[sym].shift(); // Keep last 100 points
+      const fluctuation = 1 + (Math.random() - 0.5) * 0.0005;
+      stockCache[sym].price = Number((currentPrice * fluctuation).toFixed(2));
+      stockCache[sym].change = Number(((stockCache[sym].price - currentPrice) / currentPrice * 100).toFixed(2));
+    }
 
+    // Record session history point
+    const currentPrice = stockCache[sym].price;
+    const historyPoint = {
+      date: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+      price: currentPrice,
+      timestamp: Date.now()
+    };
+    
+    sessionHistory[sym].push(historyPoint);
+    if (sessionHistory[sym].length > 100) sessionHistory[sym].shift(); // Keep last 100 points
+
+    try {
       const triggeredAlerts = await Alert.find({ symbol: sym, triggered: false });
       for (const alert of triggeredAlerts) {
         if ((alert.type === 'ABOVE' && currentPrice >= alert.targetPrice) ||
@@ -140,11 +146,8 @@ setInterval(async () => {
           await alert.save();
         }
       }
-    } catch {
-      const currentPrice = stockCache[sym].price;
-      const fluctuation = 1 + (Math.random() - 0.5) * 0.0005;
-      stockCache[sym].price = Number((currentPrice * fluctuation).toFixed(2));
-      stockCache[sym].change = Number(((stockCache[sym].price - currentPrice) / currentPrice * 100).toFixed(2));
+    } catch (err) {
+      console.error("Error evaluating alerts:", err.message);
     }
   }));
 
