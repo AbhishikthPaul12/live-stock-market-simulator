@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { updateProfile } from "../api/auth.js";
+import { useState, useEffect } from "react";
+import { updateProfile, getProfile } from "../api/auth.js";
+import { getWallet } from "../api/data.js";
 import { useNavigate } from "react-router-dom";
 
 function Profile() {
@@ -12,6 +13,25 @@ function Profile() {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+
+  // Fetch live data from API to sync balance
+  useEffect(() => {
+    async function fetchLiveData() {
+      try {
+        const [profile, wallet] = await Promise.all([getProfile(), getWallet()]);
+        const updatedUser = {
+          ...user,
+          ...profile,
+          walletBalance: wallet.walletBalance,
+        };
+        setUser(updatedUser);
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+      } catch (err) {
+        console.error("Error fetching profile data:", err);
+      }
+    }
+    fetchLiveData();
+  }, []);
 
   async function handleUpdateProfile(e) {
     e.preventDefault();
@@ -57,7 +77,7 @@ function Profile() {
               </div>
 
               <div className="bg-slate-50 p-8 rounded-[32px] border border-slate-100 flex flex-col justify-center">
-                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Available Liquidity</label>
+                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Available Balance</label>
                  <p className="text-4xl font-black text-indigo-600 font-mono tracking-tighter">
                     ₹{(user?.walletBalance || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                  </p>
@@ -173,4 +193,4 @@ function Profile() {
   );
 }
 
-export default Profile;
+export default Profile;
