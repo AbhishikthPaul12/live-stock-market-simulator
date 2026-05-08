@@ -13,8 +13,8 @@ export const getPortfolioAnalysis = (portfolio) =>
   API.post("/ai/portfolio-analysis", { portfolio }).then((r) => r.data);
 
 // ─── Trade Recommendations ─────────────────────────────────────────────────────
-export const getRecommendations = () =>
-  API.get("/ai/recommendations").then((r) => r.data);
+export const getRecommendations = (stocks) =>
+  API.post("/ai/recommendations", { stocks }).then((r) => r.data);
 
 // ─── News Summary ──────────────────────────────────────────────────────────────
 export const getNewsSummary = (headlines) =>
