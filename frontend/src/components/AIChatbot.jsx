@@ -185,8 +185,12 @@ export default function AIChatbot() {
       {/* ── Floating Button ─────────────────────────────────────────────────── */}
       <motion.button
         onClick={() => {
-          setIsOpen(true);
-          setIsMinimized(false);
+          if (isOpen && isMinimized) {
+            setIsMinimized(false);
+          } else {
+            setIsOpen(true);
+            setIsMinimized(false);
+          }
         }}
         className={`fixed bottom-6 right-6 z-50 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl shadow-indigo-300 flex items-center justify-center hover:bg-indigo-700 transition-colors ${
           isOpen && !isMinimized ? "hidden" : "flex"
@@ -241,12 +245,16 @@ export default function AIChatbot() {
 
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setIsMinimized((p) => !p)}
+                  onClick={() => {
+                    setIsMinimized(true);
+                    setIsOpen(false);
+                  }}
                   className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors text-white"
+                  title="Minimize"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
-                      d={isMinimized ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"}
+                      d="M19 9l-7 7-7-7"
                     />
                   </svg>
                 </button>
