@@ -48,7 +48,7 @@ function Register() {
           </div>
 
           <div>
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Corporate Email</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Email</label>
             <input
               type="email"
               placeholder="name@company.com"
@@ -59,7 +59,7 @@ function Register() {
           </div>
 
           <div>
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Secure Password</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Password</label>
             <input
               type="password"
               placeholder="••••••••"
@@ -83,7 +83,7 @@ function Register() {
         <p className="text-xs font-bold text-slate-400 mt-10 text-center uppercase tracking-widest">
           Already have an account?{" "}
           <Link to="/" className="text-indigo-600 hover:text-indigo-800 transition-colors ml-1">
-            Authenticate
+            Login
           </Link>
         </p>
       </div>
@@ -91,4 +91,4 @@ function Register() {
   );
 }
 
-export default Register;
+export default Register;

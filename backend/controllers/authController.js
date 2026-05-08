@@ -106,6 +106,27 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
+// VERIFY RESET TOKEN
+export const verifyResetToken = async (req, res) => {
+  try {
+    const { token } = req.body;
+
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired reset token" });
+    }
+
+    res.json({ message: "Token verified successfully", valid: true });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // RESET PASSWORD
 export const resetPassword = async (req, res) => {
   try {

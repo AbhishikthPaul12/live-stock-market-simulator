@@ -36,7 +36,7 @@ function Login({ setUser }) {
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Corporate Email</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Email</label>
             <input
               type="email"
               placeholder="name@company.com"
@@ -47,7 +47,7 @@ function Login({ setUser }) {
           </div>
 
           <div>
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Secure Password</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Password</label>
             <input
               type="password"
               placeholder="••••••••"
@@ -69,7 +69,7 @@ function Login({ setUser }) {
           >
             {loading ? (
               <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            ) : "Authenticate"}
+            ) : "Login"}
           </button>
         </form>
 
@@ -84,4 +84,4 @@ function Login({ setUser }) {
   );
 }
 
-export default Login;
+export default Login;

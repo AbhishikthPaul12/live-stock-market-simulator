@@ -42,7 +42,7 @@ function App() {
             element={!user ? <Register /> : <Navigate to="/dashboard" />}
           />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/reset-password/:token?" element={<ResetPassword />} />
           <Route
             path="/dashboard"
             element={user ? <RootLayout setUser={setUser} /> : <Navigate to="/" />}
