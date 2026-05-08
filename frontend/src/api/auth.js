@@ -33,6 +33,11 @@ export const forgotPassword = async (email) => {
   return res.data;
 };
 
+export const verifyResetToken = async (token) => {
+  const res = await axios.post("/auth/verify-token", { token });
+  return res.data;
+};
+
 export const resetPassword = async (data) => {
   const res = await axios.post("/auth/reset-password", data);
   return res.data;
