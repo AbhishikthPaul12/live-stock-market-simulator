@@ -38,7 +38,7 @@ function Leaderboard() {
           </div>
           <h1 className="text-6xl font-black text-slate-900 tracking-tighter">Trader Leaderboard</h1>
           <p className="text-slate-500 mt-4 font-medium text-xl max-w-2xl leading-relaxed">
-            Celebrating the most strategic minds in the simulation. Rankings are calculated based on <span className="text-slate-900 font-bold underline decoration-indigo-200 underline-offset-4">Total Net Worth</span> (Wallet + Portfolio).
+            Celebrating the most strategic minds in the simulation. Rankings are calculated based on <span className="text-slate-900 font-bold underline decoration-indigo-200 underline-offset-4">Profit Gained</span> from trading.
           </p>
         </header>
 
@@ -64,8 +64,8 @@ function Leaderboard() {
                   <h3 className="text-2xl font-black text-slate-900 mb-1">{topThree[1].name}</h3>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Runner Up</p>
                   <div className="bg-slate-50 rounded-2xl py-4">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Net Worth</p>
-                    <p className="text-2xl font-black text-slate-900">₹{topThree[1].totalWealth.toLocaleString('en-IN')}</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Profit</p>
+                    <p className={`text-2xl font-black ${topThree[1].profit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{topThree[1].profit >= 0 ? '+' : ''}₹{topThree[1].profit.toLocaleString('en-IN')}</p>
                   </div>
                 </div>
               )}
@@ -80,8 +80,8 @@ function Leaderboard() {
                   <h3 className="text-3xl font-black text-white mb-1 tracking-tight">{topThree[0].name}</h3>
                   <p className="text-[10px] font-black text-white/60 uppercase tracking-widest mb-8">Master Trader</p>
                   <div className="bg-white/10 backdrop-blur-md rounded-3xl py-6">
-                    <p className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">Net Worth</p>
-                    <p className="text-3xl font-black text-white">₹{topThree[0].totalWealth.toLocaleString('en-IN')}</p>
+                    <p className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">Profit</p>
+                    <p className="text-3xl font-black text-white">{topThree[0].profit >= 0 ? '+' : ''}₹{topThree[0].profit.toLocaleString('en-IN')}</p>
                   </div>
                 </div>
               )}
@@ -95,8 +95,8 @@ function Leaderboard() {
                   <h3 className="text-2xl font-black text-slate-900 mb-1">{topThree[2].name}</h3>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6">Rising Star</p>
                   <div className="bg-slate-50 rounded-2xl py-4">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Net Worth</p>
-                    <p className="text-2xl font-black text-slate-900">₹{topThree[2].totalWealth.toLocaleString('en-IN')}</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Profit</p>
+                    <p className={`text-2xl font-black ${topThree[2].profit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{topThree[2].profit >= 0 ? '+' : ''}₹{topThree[2].profit.toLocaleString('en-IN')}</p>
                   </div>
                 </div>
               )}
@@ -119,8 +119,8 @@ function Leaderboard() {
                          </div>
                       </div>
                       <div className="text-right">
-                         <p className="text-xl font-black text-emerald-600 tracking-tighter">₹{user.totalWealth.toLocaleString('en-IN')}</p>
-                         <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Total Wealth</p>
+                         <p className={`text-xl font-black tracking-tighter ${user.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>{user.profit >= 0 ? '+' : ''}₹{user.profit.toLocaleString('en-IN')}</p>
+                         <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Profit</p>
                       </div>
                    </div>
                  )) : (
