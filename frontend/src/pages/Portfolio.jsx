@@ -9,6 +9,56 @@ import LoadingSkeleton from "../components/ai/LoadingSkeleton.jsx";
 
 import { useToast } from "../context/ToastContext.jsx";
 
+// ─── Per-stock AI insight component ──────────────────────────────────────────
+const PortfolioAIInsight = ({ symbol }) => {
+  const [insight, setInsight] = useState(null);
+  const [insightLoading, setInsightLoading] = useState(false);
+  const [showInsight, setShowInsight] = useState(false);
+
+  async function fetchInsight() {
+    if (showInsight) { setShowInsight(false); return; }
+    setShowInsight(true);
+    setInsightLoading(true);
+    try {
+      const data = await getStockInsight(symbol, 0, 0);
+      setInsight(data);
+    } catch {
+      setInsight({ summary: "AI insight temporarily unavailable.", sentiment: "Neutral", riskLevel: "Medium" });
+    } finally {
+      setInsightLoading(false);
+    }
+  }
+
+  const sentimentColors = { Bullish: "bg-emerald-50 text-emerald-600 border-emerald-100", Bearish: "bg-rose-50 text-rose-600 border-rose-100", Neutral: "bg-slate-50 text-slate-500 border-slate-100" };
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={fetchInsight}
+        className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-800 transition-colors"
+      >
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.344.346a2 2 0 01-2.828 0l-.344-.346z" /></svg>
+        {showInsight ? "Hide AI" : "AI Insight"}
+      </button>
+      {showInsight && (
+        <div className="mt-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 text-left space-y-2">
+          {insightLoading ? (
+            <LoadingSkeleton lines={2} />
+          ) : insight ? (
+            <>
+              <div className="flex items-center justify-between">
+                 <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${sentimentColors[insight.sentiment] || sentimentColors.Neutral}`}>{insight.sentiment}</span>
+                 <RiskBadge level={insight.riskLevel} compact />
+              </div>
+              <p className="text-[10px] text-slate-500 font-medium leading-relaxed">{insight.summary}</p>
+            </>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+};
+
 function Portfolio() {
   const { addToast } = useToast();
   const [portfolio, setPortfolio] = useState([]);
@@ -16,56 +66,6 @@ function Portfolio() {
   const [realizedProfit, setRealizedProfit] = useState(0);
   const [livePrices, setLivePrices] = useState({});
   const [loading, setLoading] = useState(true);
-
-  // Per-stock AI insight component
-  const PortfolioAIInsight = ({ symbol }) => {
-    const [insight, setInsight] = useState(null);
-    const [insightLoading, setInsightLoading] = useState(false);
-    const [showInsight, setShowInsight] = useState(false);
-
-    async function fetchInsight() {
-      if (showInsight) { setShowInsight(false); return; }
-      setShowInsight(true);
-      setInsightLoading(true);
-      try {
-        const data = await getStockInsight(symbol, 0, 0);
-        setInsight(data);
-      } catch {
-        setInsight({ summary: "AI insight temporarily unavailable.", sentiment: "Neutral", riskLevel: "Medium" });
-      } finally {
-        setInsightLoading(false);
-      }
-    }
-
-    const sentimentColors = { Bullish: "bg-emerald-50 text-emerald-600 border-emerald-100", Bearish: "bg-rose-50 text-rose-600 border-rose-100", Neutral: "bg-slate-50 text-slate-500 border-slate-100" };
-
-    return (
-      <div className="mt-2">
-        <button
-          onClick={fetchInsight}
-          className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-800 transition-colors"
-        >
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.344.346a2 2 0 01-2.828 0l-.344-.346z" /></svg>
-          {showInsight ? "Hide AI" : "AI Insight"}
-        </button>
-        {showInsight && (
-          <div className="mt-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 text-left space-y-2">
-            {insightLoading ? (
-              <LoadingSkeleton lines={2} />
-            ) : insight ? (
-              <>
-                <div className="flex items-center justify-between">
-                   <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${sentimentColors[insight.sentiment] || sentimentColors.Neutral}`}>{insight.sentiment}</span>
-                   <RiskBadge level={insight.riskLevel} compact />
-                </div>
-                <p className="text-[10px] text-slate-500 font-medium leading-relaxed">{insight.summary}</p>
-              </>
-            ) : null}
-          </div>
-        )}
-      </div>
-    );
-  };
 
   useEffect(() => {
     async function fetchData() {
