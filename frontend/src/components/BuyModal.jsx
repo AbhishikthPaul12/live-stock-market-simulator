@@ -1,10 +1,22 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect } from "react";
+import { getRiskAnalysis } from "../api/ai.js";
+import RiskBadge from "./ai/RiskBadge.jsx";
 
 function BuyModal({ stock, onClose, onConfirm }) {
   const [qty, setQty] = useState(1);
+  const [riskData, setRiskData] = useState(null);
+  const [riskLoading, setRiskLoading] = useState(false);
 
   useEffect(() => {
     setQty(1);
+    if (stock) {
+      setRiskLoading(true);
+      setRiskData(null);
+      getRiskAnalysis(stock.symbol, stock.price, stock.change || 0)
+        .then(setRiskData)
+        .catch(() => setRiskData({ riskLevel: "Medium", riskScore: 5, reasoning: "Risk data unavailable." }))
+        .finally(() => setRiskLoading(false));
+    }
   }, [stock]);
 
   if (!stock) return null;
@@ -54,6 +66,16 @@ function BuyModal({ stock, onClose, onConfirm }) {
               className="w-full bg-white border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-black text-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
               min="1"
             />
+          </div>
+
+          {/* AI Risk Meter */}
+          <div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">AI Risk Meter</p>
+            {riskLoading ? (
+              <div className="h-16 bg-slate-100 rounded-2xl animate-pulse" />
+            ) : riskData ? (
+              <RiskBadge level={riskData.riskLevel} score={riskData.riskScore} reasoning={riskData.reasoning} />
+            ) : null}
           </div>
         </div>
 
