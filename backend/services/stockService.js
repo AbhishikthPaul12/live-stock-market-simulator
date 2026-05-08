@@ -86,6 +86,7 @@ const generateDeterministicPrice = (symbol) => {
 
 // In-Memory Cache
 const stockCache = {};
+const sessionHistory = {}; // Stores last 60 minutes of price points
 
 INITIAL_STOCKS.forEach(stock => {
   stockCache[stock.symbol] = {
@@ -93,6 +94,7 @@ INITIAL_STOCKS.forEach(stock => {
     price: generateDeterministicPrice(stock.symbol),
     change: 0
   };
+  sessionHistory[stock.symbol] = [];
 });
 
 // Batch Real-Time Engine: 5 stocks per second
@@ -119,7 +121,17 @@ setInterval(async () => {
         stockCache[sym].change = Number(res.data.d.toFixed(2));
       }
 
+      // Record session history point
       const currentPrice = stockCache[sym].price;
+      const historyPoint = {
+        date: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
+        price: currentPrice,
+        timestamp: Date.now()
+      };
+      
+      sessionHistory[sym].push(historyPoint);
+      if (sessionHistory[sym].length > 100) sessionHistory[sym].shift(); // Keep last 100 points
+
       const triggeredAlerts = await Alert.find({ symbol: sym, triggered: false });
       for (const alert of triggeredAlerts) {
         if ((alert.type === 'ABOVE' && currentPrice >= alert.targetPrice) ||
@@ -178,15 +190,37 @@ const generateMockHistory = async (symbol, timeframe = '1M') => {
   const history = [];
   const now = Date.now();
   let points = 30, interval = 24 * 60 * 60 * 1000;
-  if (timeframe === '1D') { points = 24; interval = 60 * 60 * 1000; }
-  if (timeframe === '1W') { points = 7; interval = 24 * 60 * 60 * 1000; }
-  if (timeframe === '3YRS') { points = 12; interval = 90 * 24 * 60 * 60 * 1000; }
+  if (timeframe === '1D') { points = 48; interval = 30 * 60 * 1000; } // 30 min intervals for 1 day
+  else if (timeframe === '1W') { points = 7; interval = 24 * 60 * 60 * 1000; }
+  else if (timeframe === '1M') { points = 30; interval = 24 * 60 * 60 * 1000; }
+  else if (timeframe === '3M') { points = 90; interval = 24 * 60 * 60 * 1000; }
+  else if (timeframe === '6M') { points = 180; interval = 24 * 60 * 60 * 1000; }
+  else if (timeframe === '1YR') { points = 365; interval = 24 * 60 * 60 * 1000; }
+  else if (timeframe === '3YRS') { points = 36; interval = 30 * 24 * 60 * 60 * 1000; } // Monthly for 3 years
   for (let i = points; i >= 0; i--) {
     const timestamp = now - (i * interval);
+    // Add a cumulative trend for realism
+    const trend = (i / points) * (basePrice * 0.15) * (Math.abs(basePrice % 2) - 1); // Simple deterministic trend
     const noise = (Math.random() - 0.5) * (basePrice * 0.08);
+    const dateObj = new Date(timestamp);
+    let dateStr;
+
+    if (timeframe === '1D') {
+      dateStr = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+    } else if (timeframe === '1YR') {
+      dateStr = dateObj.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+    } else if (timeframe === '3YRS') {
+      dateStr = dateObj.toLocaleDateString('en-IN', { year: 'numeric' });
+    } else if (['3M', '6M'].includes(timeframe)) {
+      dateStr = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    } else {
+      dateStr = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+    }
+
     history.push({
-      date: new Date(timestamp).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }),
-      price: parseFloat((basePrice + noise).toFixed(2))
+      date: dateStr,
+      price: parseFloat((basePrice - trend + noise).toFixed(2)),
+      timestamp: timestamp
     });
   }
   return history;
@@ -211,13 +245,45 @@ export const getStockHistory = async (symbol, timeframe = '1M') => {
       params: { symbol: symbol.toUpperCase(), resolution, from, to, token: apiKey }
     });
     if (res.data.s === 'ok') {
-      return res.data.t.map((t, i) => ({
-        date: new Date(t * 1000).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: timeframe === '3YRS' ? 'numeric' : undefined }),
-        price: Number(res.data.c[i].toFixed(2))
-      }));
+      const apiData = res.data.t.map((t, i) => {
+        const dateObj = new Date(t * 1000);
+        let dateStr;
+        
+        if (timeframe === '1D') {
+          dateStr = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+        } else if (timeframe === '1YR') {
+          dateStr = dateObj.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+        } else if (timeframe === '3YRS') {
+          dateStr = dateObj.toLocaleDateString('en-IN', { year: 'numeric' });
+        } else if (['3M', '6M'].includes(timeframe)) {
+          dateStr = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        } else {
+          dateStr = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+        }
+
+        return {
+          date: dateStr,
+          price: Number(res.data.c[i].toFixed(2)),
+          timestamp: t * 1000
+        };
+      });
+
+      // Merge with session history if timeframe is small
+      if (timeframe === '1D' && sessionHistory[sym]?.length > 0) {
+        return [...apiData, ...sessionHistory[sym]];
+      }
+      return apiData;
     }
     throw new Error();
   } catch {
-    return await generateMockHistory(symbol, timeframe);
+    const mockData = await generateMockHistory(symbol, timeframe);
+    const sym = symbol.toUpperCase();
+    if (timeframe === '1D' && sessionHistory[sym]?.length > 0) {
+       // Filter mock data that might overlap with session history
+       const lastSessionTs = sessionHistory[sym][0].timestamp;
+       const filteredMock = mockData.filter(m => (m.timestamp || 0) < lastSessionTs);
+       return [...filteredMock, ...sessionHistory[sym]];
+    }
+    return mockData;
   }
 };
