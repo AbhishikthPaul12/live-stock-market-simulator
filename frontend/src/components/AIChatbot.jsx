@@ -86,7 +86,6 @@ const SUGGESTED_PROMPTS = [
   "What is diversification?",
   "Is my portfolio risky?",
   "Explain candlestick charts",
-  "What stocks are trending?",
   "How does P/E ratio work?",
   "Explain risk management",
 ];
@@ -95,13 +94,7 @@ const SUGGESTED_PROMPTS = [
 export default function AIChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      content:
-        "Hi! I'm **StockSim AI** 👋\n\nI can help you understand stocks, analyze your portfolio, explain market concepts, and answer trading questions.\n\nWhat would you like to know?",
-    },
-  ]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -109,12 +102,31 @@ export default function AIChatbot() {
   const inputRef = useRef(null);
   const debounceRef = useRef(null);
 
-  // Auto-scroll to bottom
+  // Load history from localStorage
   useEffect(() => {
+    const saved = localStorage.getItem("ai_chat_history");
+    if (saved) {
+      setMessages(JSON.parse(saved));
+    } else {
+      setMessages([
+        {
+          role: "assistant",
+          content:
+            "Hi! I'm **StockSim AI** 👋\n\nI can help you understand stocks, analyze your portfolio, explain market concepts, and answer trading questions.\n\nWhat would you like to know?",
+        },
+      ]);
+    }
+  }, []);
+
+  // Save history to localStorage
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem("ai_chat_history", JSON.stringify(messages));
+    }
     if (isOpen && !isMinimized) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isLoading, isOpen, isMinimized]);
+  }, [messages, isOpen, isMinimized]);
 
   // Focus input when opened
   useEffect(() => {
@@ -132,25 +144,18 @@ export default function AIChatbot() {
       setError(null);
 
       const userMsg = { role: "user", content: trimmed };
-      const historyForAPI = messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-
-      setMessages((prev) => [...prev, userMsg]);
+      const currentMessages = [...messages, userMsg];
+      setMessages(currentMessages);
       setIsLoading(true);
 
       try {
-        const data = await sendChatMessage(trimmed, historyForAPI);
+        const data = await sendChatMessage(trimmed, messages);
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: data.reply },
+          { role: "assistant", content: data.response },
         ]);
       } catch (err) {
-        const errMsg =
-          err.response?.status === 429
-            ? "Please wait a moment before sending another message."
-            : "AI service is temporarily unavailable. Please try again shortly.";
+        const errMsg = "AI service is temporarily unavailable. Please try again shortly.";
         setError(errMsg);
         setMessages((prev) => [
           ...prev,
@@ -180,8 +185,12 @@ export default function AIChatbot() {
       {/* ── Floating Button ─────────────────────────────────────────────────── */}
       <motion.button
         onClick={() => {
-          setIsOpen(true);
-          setIsMinimized(false);
+          if (isOpen && isMinimized) {
+            setIsMinimized(false);
+          } else {
+            setIsOpen(true);
+            setIsMinimized(false);
+          }
         }}
         className={`fixed bottom-6 right-6 z-50 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-2xl shadow-indigo-300 flex items-center justify-center hover:bg-indigo-700 transition-colors ${
           isOpen && !isMinimized ? "hidden" : "flex"
@@ -195,7 +204,6 @@ export default function AIChatbot() {
             d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.344.346a2 2 0 01-2.828 0l-.344-.346z"
           />
         </svg>
-        {/* Pulse ring */}
         <span className="absolute w-14 h-14 rounded-full border-2 border-indigo-400 animate-ping opacity-30" />
       </motion.button>
 
@@ -230,27 +238,29 @@ export default function AIChatbot() {
                   <p className="text-white font-black text-sm">StockSim AI</p>
                   <div className="flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                    <span className="text-indigo-200 text-[10px] font-medium">Active · Educational Mode</span>
+                    <span className="text-indigo-200 text-[10px] font-medium">Llama-3.2 Powered</span>
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setIsMinimized((p) => !p)}
+                  onClick={() => {
+                    setIsMinimized(true);
+                    setIsOpen(false);
+                  }}
                   className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors text-white"
-                  title={isMinimized ? "Expand" : "Minimize"}
+                  title="Minimize"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
-                      d={isMinimized ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"}
+                      d="M19 9l-7 7-7-7"
                     />
                   </svg>
                 </button>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors text-white"
-                  title="Close"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
@@ -261,7 +271,6 @@ export default function AIChatbot() {
 
             {!isMinimized && (
               <>
-                {/* Messages */}
                 <div className="flex-1 overflow-y-auto px-4 py-4 space-y-0 bg-slate-50/50">
                   {messages.map((msg, i) => (
                     <ChatMessage key={i} message={msg} />
@@ -270,10 +279,9 @@ export default function AIChatbot() {
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Suggested Prompts (shown when only initial message) */}
-                {messages.length === 1 && (
+                {messages.length <= 1 && (
                   <div className="px-4 py-2 flex gap-2 overflow-x-auto scrollbar-none bg-slate-50/50 border-t border-slate-100 shrink-0">
-                    {SUGGESTED_PROMPTS.slice(0, 4).map((p) => (
+                    {SUGGESTED_PROMPTS.map((p) => (
                       <button
                         key={p}
                         onClick={() => handlePromptClick(p)}
@@ -285,7 +293,6 @@ export default function AIChatbot() {
                   </div>
                 )}
 
-                {/* Input */}
                 <div className="px-4 py-3 border-t border-slate-200 bg-white shrink-0">
                   <div className="flex items-end gap-2">
                     <textarea
@@ -293,7 +300,7 @@ export default function AIChatbot() {
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder="Ask about stocks, markets, or your portfolio..."
+                      placeholder="Ask Llama-3.2 about markets..."
                       rows={1}
                       className="flex-1 resize-none bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all max-h-28 overflow-y-auto"
                       style={{ lineHeight: "1.5" }}
@@ -310,9 +317,6 @@ export default function AIChatbot() {
                       </svg>
                     </button>
                   </div>
-                  <p className="text-[10px] text-slate-300 mt-2 text-center font-medium">
-                    Educational simulation only · Not financial advice
-                  </p>
                 </div>
               </>
             )}

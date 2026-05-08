@@ -14,7 +14,7 @@ const router = express.Router();
 
 // All AI routes require authentication
 router.post("/chat", protect, chat);
-router.get("/stock-insight/:symbol", protect, stockInsight);
+router.post("/stock-insight", protect, stockInsight);
 router.post("/portfolio-analysis", protect, portfolioAnalysis);
 router.get("/recommendations", protect, recommendations);
 router.post("/news-summary", protect, newsSummary);

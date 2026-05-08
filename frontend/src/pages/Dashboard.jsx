@@ -396,7 +396,7 @@ function Dashboard() {
             </div>
             <h2 className="text-xl font-black text-slate-900 tracking-tight">AI Market News</h2>
             <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
-              Gemini Summarized
+              Llama-3.2 Summarized
             </span>
             <div className="flex-1"></div>
             {!newsLoaded && (

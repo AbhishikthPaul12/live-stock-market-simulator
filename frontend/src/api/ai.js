@@ -5,26 +5,24 @@ export const sendChatMessage = (message, history) =>
   API.post("/ai/chat", { message, history }).then((r) => r.data);
 
 // ─── Stock Insight ─────────────────────────────────────────────────────────────
-export const getStockInsight = (symbol, price, change) =>
-  API.get(`/ai/stock-insight/${symbol}`, { params: { price, change } }).then((r) => r.data);
+export const getStockInsight = (symbol, price, change, name) =>
+  API.post("/ai/stock-insight", { symbol, price, change, name }).then((r) => r.data);
 
 // ─── Portfolio Analysis ────────────────────────────────────────────────────────
-export const getPortfolioAnalysis = (holdings) =>
-  API.post("/ai/portfolio-analysis", { holdings }).then((r) => r.data);
+export const getPortfolioAnalysis = (portfolio) =>
+  API.post("/ai/portfolio-analysis", { portfolio }).then((r) => r.data);
 
 // ─── Trade Recommendations ─────────────────────────────────────────────────────
-export const getRecommendations = (stockList) =>
-  API.get("/ai/recommendations", {
-    params: { stocks: JSON.stringify(stockList) },
-  }).then((r) => r.data);
+export const getRecommendations = () =>
+  API.get("/ai/recommendations").then((r) => r.data);
 
 // ─── News Summary ──────────────────────────────────────────────────────────────
 export const getNewsSummary = (headlines) =>
   API.post("/ai/news-summary", { headlines }).then((r) => r.data);
 
 // ─── Risk Analysis ─────────────────────────────────────────────────────────────
-export const getRiskAnalysis = (symbol, price, change) =>
-  API.get(`/ai/risk-analysis/${symbol}`, { params: { price, change } }).then((r) => r.data);
+export const getRiskAnalysis = (symbol) =>
+  API.get(`/ai/risk-analysis/${symbol}`).then((r) => r.data);
 
 // ─── Learning Assistant ────────────────────────────────────────────────────────
 export const learnTopic = (topic) =>
