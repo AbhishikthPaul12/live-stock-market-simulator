@@ -50,7 +50,7 @@ function Dashboard() {
         setWallet(w.walletBalance);
         setPortfolio(p);
         setRealizedProfit(profile.realizedProfit || 0);
-        await updatePricesLocal(p);
+        await updatePrices(p);
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
       } finally {
