@@ -35,13 +35,13 @@ export default function Analytics() {
       const formatted = history.map((h, i) => ({
         ...h,
         showOnAxis:
-          range === '1D' ? i % 4 === 0 :
+          range === '1D' ? i % 8 === 0 :
           range === '1W' ? true :
-          range === '1M' ? i % 5 === 0 :
+          range === '1M' ? i % 6 === 0 :
           range === '3M' ? i % 15 === 0 :
           range === '6M' ? i % 30 === 0 :
-          range === '1YR' ? i % 8 === 0 :
-          i % 12 === 0
+          range === '1YR' ? i % 60 === 0 :
+          i % 6 === 0
       }));
       setChartData(formatted);
       setLastUpdated(new Date());
@@ -59,13 +59,31 @@ export default function Analytics() {
   }, [selectedStock, selectedRange, fetchHistory]);
 
   useEffect(() => {
-    if (selectedRange === '1D' && selectedStock) {
-      const interval = setInterval(() => {
-        fetchHistory(selectedStock.symbol, '1D');
-      }, 30000);
-      return () => clearInterval(interval);
+    if (selectedStock && chartData.length > 0) {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      
+      setChartData(prev => {
+        const lastPoint = prev[prev.length - 1];
+        if (lastPoint.price !== selectedStock.price || lastPoint.date !== timeStr) {
+           const newPoint = {
+             ...lastPoint,
+             date: timeStr,
+             price: selectedStock.price,
+             showOnAxis: true
+           };
+           
+           if (lastPoint.date === timeStr) {
+             const updated = [...prev];
+             updated[updated.length - 1] = newPoint;
+             return updated;
+           }
+           return [...prev, newPoint];
+        }
+        return prev;
+      });
     }
-  }, [selectedRange, selectedStock, fetchHistory]);
+  }, [selectedStock?.price]);
 
   if (loading) {
     return (
