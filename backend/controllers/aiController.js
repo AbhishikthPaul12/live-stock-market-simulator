@@ -28,10 +28,18 @@ export const portfolioAnalysis = async (req, res) => {
 
 export const stockInsight = async (req, res) => {
   try {
-    const { symbol, price, change, name } = req.body;
+    let { symbol, price, change, name } = req.body;
     if (!symbol) {
       return res.status(400).json({ message: "Stock symbol is required" });
     }
+
+    // Enrich with name if missing
+    if (!name) {
+      const { getStockData } = await import("../services/stockService.js");
+      const stockInfo = await getStockData(symbol);
+      name = stockInfo.name;
+    }
+
     const insight = await aiService.generateStockInsight({ symbol, price, change, name });
     res.json(insight);
   } catch (error) {

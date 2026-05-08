@@ -10,7 +10,7 @@ import LoadingSkeleton from "../components/ai/LoadingSkeleton.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 
 // ─── Per-stock AI insight component ──────────────────────────────────────────
-const PortfolioAIInsight = ({ symbol }) => {
+const PortfolioAIInsight = ({ symbol, price, change }) => {
   const [insight, setInsight] = useState(null);
   const [insightLoading, setInsightLoading] = useState(false);
   const [showInsight, setShowInsight] = useState(false);
@@ -20,7 +20,7 @@ const PortfolioAIInsight = ({ symbol }) => {
     setShowInsight(true);
     setInsightLoading(true);
     try {
-      const data = await getStockInsight(symbol, 0, 0);
+      const data = await getStockInsight(symbol, price || 0, change || 0);
       setInsight(data);
     } catch {
       setInsight({ summary: "AI insight temporarily unavailable.", sentiment: "Neutral", riskLevel: "Medium" });
@@ -50,7 +50,23 @@ const PortfolioAIInsight = ({ symbol }) => {
                  <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${sentimentColors[insight.sentiment] || sentimentColors.Neutral}`}>{insight.sentiment}</span>
                  <RiskBadge level={insight.riskLevel} compact />
               </div>
-              <p className="text-[10px] text-slate-500 font-medium leading-relaxed">{insight.summary}</p>
+              <p className="text-[10px] text-slate-500 font-medium leading-relaxed whitespace-pre-line">
+                {typeof insight.summary === 'object' 
+                  ? (insight.summary.company || insight.summary.description || JSON.stringify(insight.summary)) 
+                  : insight.summary}
+              </p>
+              {insight.shortTermOutlook && (
+                <div className="text-[9px] text-slate-400 font-medium whitespace-pre-line">
+                  <span className="font-black text-slate-600">Outlook: </span>
+                  {insight.shortTermOutlook}
+                </div>
+              )}
+              {insight.volatility && (
+                <div className="text-[9px] text-slate-400 font-medium whitespace-pre-line">
+                  <span className="font-black text-slate-600">Volatility: </span>
+                  {insight.volatility}
+                </div>
+              )}
             </>
           ) : null}
         </div>
@@ -379,7 +395,7 @@ function Portfolio() {
                             <div>
                               <span className="font-black text-slate-900 text-lg tracking-tight block">{item.symbol}</span>
                               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Global Asset</span>
-                              <PortfolioAIInsight symbol={item.symbol} />
+                              <PortfolioAIInsight symbol={item.symbol} price={current} change={profitPercent} />
                             </div>
                           </div>
                         </td>

@@ -68,23 +68,33 @@ export const analyzePortfolio = async (portfolioData) => {
 };
 
 export const generateStockInsight = async (stockData) => {
-  const prompt = `Provide a financial summary, risk level, market sentiment, volatility insight, and a short-term outlook for this stock: ${JSON.stringify(stockData)}.
-  Return the response in a structured JSON format with fields: summary, riskLevel, sentiment, volatility, shortTermOutlook.`;
+  const prompt = `Provide a detailed financial insight for ${stockData.name} (${stockData.symbol}).
+  Return the response in a structured JSON format with fields: summary, riskLevel, sentiment, volatility, shortTermOutlook.
+  
+  CRITICAL REQUIREMENTS:
+  - The analysis MUST be about ${stockData.name}.
+  - Return ONLY ONE JSON object. Do NOT repeat yourself.
+  - Do NOT wrap the JSON in markdown code blocks.
+  - Provide 3-4 bullet points of educational insight in the 'summary' field.
+  - Every field must be a STRING.`;
   
   try {
     const text = await callHF(prompt);
     try {
-      const jsonStart = text.indexOf('{');
-      const jsonEnd = text.lastIndexOf('}') + 1;
-      if (jsonStart !== -1 && jsonEnd !== -1) {
-        return JSON.parse(text.slice(jsonStart, jsonEnd));
+      // Smarter extraction: Find the FIRST valid { ... } block
+      const jsonMatch = text.match(/\{[\s\S]*?\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
       }
     } catch (e) {
       console.warn("Failed to parse AI JSON response.");
     }
     
+    // Cleanup fallback summary if it contains JSON-like artifacts
+    const cleanSummary = text.replace(/```json|```|\{|\}|"summary":|"riskLevel":|"sentiment":|"volatility":|"shortTermOutlook":/g, "").trim();
+    
     return {
-      summary: text,
+      summary: cleanSummary,
       riskLevel: "Medium",
       sentiment: "Neutral",
       volatility: "Standard",

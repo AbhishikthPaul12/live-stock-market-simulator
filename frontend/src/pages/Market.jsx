@@ -109,12 +109,16 @@ const StockCard = ({ s, onChartOpen }) => {
                 </span>
                 <RiskBadge level={insight.riskLevel} compact />
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed">{insight.summary}</p>
+              <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
+                {typeof insight.summary === 'object' 
+                  ? (insight.summary.company || insight.summary.description || JSON.stringify(insight.summary)) 
+                  : insight.summary}
+              </p>
               {insight.shortTermOutlook && (
-                <div className="text-[10px] text-slate-500 font-medium">
+                <p className="text-[10px] text-slate-500 font-medium leading-relaxed whitespace-pre-line">
                   <span className="font-black text-slate-700">Short-term: </span>
                   {insight.shortTermOutlook}
-                </div>
+                </p>
               )}
             </>
           ) : null}
