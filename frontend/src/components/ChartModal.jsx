@@ -23,7 +23,34 @@ export default function ChartModal({ stock, onClose, onBuy, onWatchlist }) {
     }
     
     fetchHistory();
-  }, [stock]);
+  }, [stock?.symbol]);
+
+  useEffect(() => {
+    if (stock && stock.price && history.length > 0) {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+      
+      setHistory(prev => {
+        const lastPoint = prev[prev.length - 1];
+        // If price changed or its a new minute, update/append
+        if (lastPoint.price !== stock.price || lastPoint.date !== timeStr) {
+           const newPoint = {
+             date: timeStr,
+             price: stock.price,
+             timestamp: Date.now()
+           };
+           
+           if (lastPoint.date === timeStr) {
+             const updated = [...prev];
+             updated[updated.length - 1] = newPoint;
+             return updated;
+           }
+           return [...prev, newPoint];
+        }
+        return prev;
+      });
+    }
+  }, [stock?.price]);
 
   if (!stock) return null;
 

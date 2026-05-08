@@ -20,7 +20,7 @@ function Portfolio() {
         const [p, profile] = await Promise.all([getPortfolio(), getProfile()]);
         setPortfolio(p);
         setRealizedProfit(profile.realizedProfit || 0);
-        await updatePricesLoop(p);
+        await updatePricesLocal(p);
       } catch (err) {
         console.error("Error fetching portfolio:", err);
       } finally {
@@ -28,7 +28,7 @@ function Portfolio() {
       }
     }
 
-    async function updatePricesLoop(port) {
+    async function updatePricesLocal(port) {
       if (!port || port.length === 0) return;
       const uniqueSymbols = [...new Set(port.map(s => s.symbol))];
       
@@ -290,4 +290,4 @@ function Portfolio() {
   );
 }
 
-export default Portfolio;
+export default Portfolio;
