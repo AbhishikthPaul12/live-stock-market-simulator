@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
 import { getAllStocks, getStockHistory } from "../api/data.js";
+import { getStockInsight } from "../api/ai.js";
+import StockPredictionChart from "../components/ai/StockPredictionChart.jsx";
 
 export default function Analytics() {
   const [stocks, setStocks] = useState([]);
@@ -238,7 +240,30 @@ export default function Analytics() {
             </div>
           ))}
         </div>
-      </div>
+
+        {/* AI PREDICTION VISUALIZATION */}
+        {selectedStock && (
+          <div className="mt-12">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">AI Trend Forecast</h2>
+              <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
+                Gemini Powered
+              </span>
+              <div className="flex-1 h-px bg-slate-100" />
+            </div>
+            <StockPredictionChart
+              symbol={selectedStock.symbol?.replace('.NS', '')}
+              currentPrice={selectedStock.price}
+              trend={selectedStock.change >= 0.5 ? 'bullish' : selectedStock.change <= -0.5 ? 'bearish' : 'neutral'}
+              confidence={Math.min(95, Math.max(60, Math.round(72 + Math.abs(selectedStock.change || 0) * 2)))}
+            />
+          </div>
+        )}
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; }
@@ -246,6 +271,7 @@ export default function Analytics() {
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
       `}</style>
+      </div>
     </div>
   );
 }

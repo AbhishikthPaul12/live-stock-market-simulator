@@ -15,6 +15,7 @@ import Profile from "./pages/Profile";
 import Analytics from "./pages/Analytics";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import AILearn from "./pages/AILearn";
 
 import { ToastProvider } from "./context/ToastContext";
 
@@ -56,6 +57,7 @@ function App() {
             <Route path="alerts" element={<Alerts />} />
             <Route path="profile" element={<Profile />} />
             <Route path="analytics" element={<Analytics />} />
+            <Route path="ai-learn" element={<AILearn />} />
           </Route>
         </Routes>
       </Router>

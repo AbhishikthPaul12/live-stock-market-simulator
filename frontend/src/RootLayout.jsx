@@ -1,4 +1,5 @@
 import Navbar from "./components/Navbar";
+import AIChatbot from "./components/AIChatbot";
 import { Outlet } from "react-router-dom";
 
 function RootLayout({ setUser }) {
@@ -8,8 +9,9 @@ function RootLayout({ setUser }) {
       <main className="flex-1">
         <Outlet />
       </main>
+      <AIChatbot />
     </div>
   );
 }
 
-export default RootLayout;
+export default RootLayout;
