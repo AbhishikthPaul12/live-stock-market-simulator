@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getPortfolio } from "../api/data.js";
 import { sellStock } from "../api/trade.js";
 import { getProfile } from "../api/auth.js";
@@ -9,6 +10,72 @@ import LoadingSkeleton from "../components/ai/LoadingSkeleton.jsx";
 
 import { useToast } from "../context/ToastContext.jsx";
 
+// ─── Per-stock AI insight component ──────────────────────────────────────────
+const PortfolioAIInsight = ({ symbol, price, change }) => {
+  const [insight, setInsight] = useState(null);
+  const [insightLoading, setInsightLoading] = useState(false);
+  const [showInsight, setShowInsight] = useState(false);
+
+  async function fetchInsight() {
+    if (showInsight) { setShowInsight(false); return; }
+    setShowInsight(true);
+    setInsightLoading(true);
+    try {
+      const data = await getStockInsight(symbol, price || 0, change || 0);
+      setInsight(data);
+    } catch {
+      setInsight({ summary: "AI insight temporarily unavailable.", sentiment: "Neutral", riskLevel: "Medium" });
+    } finally {
+      setInsightLoading(false);
+    }
+  }
+
+  const sentimentColors = { Bullish: "bg-emerald-50 text-emerald-600 border-emerald-100", Bearish: "bg-rose-50 text-rose-600 border-rose-100", Neutral: "bg-slate-50 text-slate-500 border-slate-100" };
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={fetchInsight}
+        className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-800 transition-colors"
+      >
+        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.344.346a2 2 0 01-2.828 0l-.344-.346z" /></svg>
+        {showInsight ? "Hide AI" : "AI Insight"}
+      </button>
+      {showInsight && (
+        <div className="mt-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 text-left space-y-2">
+          {insightLoading ? (
+            <LoadingSkeleton lines={2} />
+          ) : insight ? (
+            <>
+              <div className="flex items-center justify-between">
+                 <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${sentimentColors[insight.sentiment] || sentimentColors.Neutral}`}>{insight.sentiment}</span>
+                 <RiskBadge level={insight.riskLevel} compact />
+              </div>
+              <p className="text-[10px] text-slate-500 font-medium leading-relaxed whitespace-pre-line">
+                {typeof insight.summary === 'object' 
+                  ? (insight.summary.company || insight.summary.description || JSON.stringify(insight.summary)) 
+                  : insight.summary}
+              </p>
+              {insight.shortTermOutlook && (
+                <div className="text-[9px] text-slate-400 font-medium whitespace-pre-line">
+                  <span className="font-black text-slate-600">Outlook: </span>
+                  {insight.shortTermOutlook}
+                </div>
+              )}
+              {insight.volatility && (
+                <div className="text-[9px] text-slate-400 font-medium whitespace-pre-line">
+                  <span className="font-black text-slate-600">Volatility: </span>
+                  {insight.volatility}
+                </div>
+              )}
+            </>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+};
+
 function Portfolio() {
   const { addToast } = useToast();
   const [portfolio, setPortfolio] = useState([]);
@@ -16,56 +83,6 @@ function Portfolio() {
   const [realizedProfit, setRealizedProfit] = useState(0);
   const [livePrices, setLivePrices] = useState({});
   const [loading, setLoading] = useState(true);
-
-  // Per-stock AI insight component
-  const PortfolioAIInsight = ({ symbol }) => {
-    const [insight, setInsight] = useState(null);
-    const [insightLoading, setInsightLoading] = useState(false);
-    const [showInsight, setShowInsight] = useState(false);
-
-    async function fetchInsight() {
-      if (showInsight) { setShowInsight(false); return; }
-      setShowInsight(true);
-      setInsightLoading(true);
-      try {
-        const data = await getStockInsight(symbol, 0, 0);
-        setInsight(data);
-      } catch {
-        setInsight({ summary: "AI insight temporarily unavailable.", sentiment: "Neutral", riskLevel: "Medium" });
-      } finally {
-        setInsightLoading(false);
-      }
-    }
-
-    const sentimentColors = { Bullish: "bg-emerald-50 text-emerald-600 border-emerald-100", Bearish: "bg-rose-50 text-rose-600 border-rose-100", Neutral: "bg-slate-50 text-slate-500 border-slate-100" };
-
-    return (
-      <div className="mt-2">
-        <button
-          onClick={fetchInsight}
-          className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-800 transition-colors"
-        >
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.344.346a2 2 0 01-2.828 0l-.344-.346z" /></svg>
-          {showInsight ? "Hide AI" : "AI Insight"}
-        </button>
-        {showInsight && (
-          <div className="mt-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 text-left space-y-2">
-            {insightLoading ? (
-              <LoadingSkeleton lines={2} />
-            ) : insight ? (
-              <>
-                <div className="flex items-center justify-between">
-                   <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${sentimentColors[insight.sentiment] || sentimentColors.Neutral}`}>{insight.sentiment}</span>
-                   <RiskBadge level={insight.riskLevel} compact />
-                </div>
-                <p className="text-[10px] text-slate-500 font-medium leading-relaxed">{insight.summary}</p>
-              </>
-            ) : null}
-          </div>
-        )}
-      </div>
-    );
-  };
 
   useEffect(() => {
     async function fetchData() {
@@ -277,7 +294,7 @@ function Portfolio() {
               <div className="flex justify-between items-center mb-8">
                  <div>
                     <h3 className="text-2xl font-black text-slate-900 tracking-tight">AI Portfolio Insights</h3>
-                    <p className="text-slate-500 text-sm font-medium mt-1">Deep analysis of your holdings using Llama-3.2.</p>
+                    <p className="text-slate-500 text-sm font-medium mt-1">Deep AI analysis of your holdings using.</p>
                  </div>
                  <button 
                    onClick={handleAIAnalyze}
@@ -298,13 +315,15 @@ function Portfolio() {
                       <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Risk Score</p>
                       <h4 className="text-5xl font-black text-indigo-700 tracking-tighter">{aiAnalysis.score}</h4>
                       <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full mt-2 inline-block">
-                        Llama-3.2 Powered
+                        AI Powered
                       </span>
                    </div>
                    <div className="lg:col-span-3 space-y-6">
                       <div>
                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Executive Summary</p>
-                         <p className="text-slate-600 font-medium leading-relaxed">{aiAnalysis.summary}</p>
+                          <p className="text-slate-600 font-medium leading-relaxed">
+                            {aiAnalysis.summary?.replace(/\{|\}|\[|\]|^["\s,]+|["\s,]+$|"/g, "").replace(/,\s*,/g, ",").trim()}
+                          </p>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                          <div className="bg-white border border-slate-100 rounded-2xl p-6">
@@ -379,7 +398,14 @@ function Portfolio() {
                             <div>
                               <span className="font-black text-slate-900 text-lg tracking-tight block">{item.symbol}</span>
                               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Global Asset</span>
-                              <PortfolioAIInsight symbol={item.symbol} />
+                              <PortfolioAIInsight symbol={item.symbol} price={current} change={profitPercent} />
+                              <Link 
+                                to={`/dashboard/market?symbol=${item.symbol}`}
+                                className="mt-1 inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-600 transition-colors"
+                              >
+                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                                Trade Now
+                              </Link>
                             </div>
                           </div>
                         </td>

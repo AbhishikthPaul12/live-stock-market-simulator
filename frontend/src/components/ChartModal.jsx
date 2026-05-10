@@ -117,24 +117,65 @@ export default function ChartModal({ stock, onClose, onBuy, onWatchlist }) {
           </div>
 
           <div className="flex flex-col lg:flex-row gap-8 items-end">
-            <div className="flex flex-col w-full lg:w-48">
+            <div className="flex flex-col w-full lg:w-64">
               <label className="text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest ml-1">Quantity</label>
-              <input 
-                type="number" 
-                min="1" 
-                value={qty} 
-                onChange={(e) => setQty(Math.max(1, Number(e.target.value)))}
-                className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-black text-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
-              />
+              <div className="flex flex-col gap-3">
+                <div className="relative group">
+                  <button 
+                    onClick={() => setQty(prev => Math.max(1, (parseInt(prev) || 0) - 1))}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-90 z-10"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" /></svg>
+                  </button>
+                  
+                  <input 
+                    type="number" 
+                    value={qty} 
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "" || /^\d+$/.test(val)) {
+                        setQty(val);
+                      }
+                    }}
+                    onBlur={() => {
+                      if (!qty || parseInt(qty) < 1) setQty(1);
+                    }}
+                    className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl p-4 px-14 text-center text-slate-900 font-black text-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                  />
+
+                  <button 
+                    onClick={() => setQty(prev => (parseInt(prev) || 0) + 1)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all active:scale-90 z-10"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg>
+                  </button>
+                </div>
+                
+                <div className="flex gap-2">
+                  {[10, 50, 100].map(preset => (
+                    <button
+                      key={preset}
+                      onClick={() => setQty(prev => (parseInt(prev) || 0) + preset)}
+                      className="flex-1 py-1.5 rounded-lg bg-slate-100 text-[9px] font-black text-slate-500 uppercase tracking-widest hover:bg-indigo-50 hover:text-indigo-600 transition-all"
+                    >
+                      +{preset}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             
             <div className="flex gap-4 w-full">
               <button
-                onClick={() => onBuy(qty)}
-                className="flex-1 bg-indigo-600 text-white py-4 px-8 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 flex items-center justify-center gap-2"
+                disabled={!qty || parseInt(qty) <= 0}
+                onClick={() => onBuy(parseInt(qty))}
+                className="flex-1 bg-indigo-600 text-white py-4 px-8 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 flex flex-col items-center justify-center gap-0.5 disabled:opacity-50 disabled:pointer-events-none"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
-                Confirm Purchase
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                  Confirm Purchase
+                </div>
+                <span className="text-[9px] opacity-60">Total: ₹{((parseInt(qty) || 0) * stock.price).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
               </button>
               <button
                 onClick={() => onWatchlist(stock)}

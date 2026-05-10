@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { getWatchlist, removeFromWatchlist } from "../api/data.js";
 import { getStockInsight } from "../api/ai.js";
 import RiskBadge from "../components/ai/RiskBadge.jsx";
@@ -59,7 +60,23 @@ function WatchlistAIAlert({ symbol }) {
                 </span>
                 <RiskBadge level={insight.riskLevel || "Medium"} compact />
               </div>
-              <p className="text-[10px] text-slate-600 leading-relaxed">{insight.summary}</p>
+              <p className="text-[10px] text-slate-600 leading-relaxed whitespace-pre-line">
+                {typeof insight.summary === 'object' 
+                  ? (insight.summary.company || insight.summary.description || JSON.stringify(insight.summary)) 
+                  : insight.summary?.replace(/\{|\}|\[|\]|^["\s,]+|["\s,]+$|"/g, "").replace(/,\s*,/g, ",").trim()}
+              </p>
+              {insight.shortTermOutlook && (
+                <div className="text-[9px] text-slate-500 font-medium whitespace-pre-line">
+                  <span className="font-black text-slate-700">Outlook: </span>
+                  {insight.shortTermOutlook}
+                </div>
+              )}
+              {insight.volatility && (
+                <div className="text-[9px] text-slate-500 font-medium whitespace-pre-line">
+                  <span className="font-black text-slate-700">Volatility: </span>
+                  {insight.volatility}
+                </div>
+              )}
             </>
           ) : null}
         </div>
@@ -150,6 +167,14 @@ function Watchlist() {
 
                   {/* AI Alert Section */}
                   <WatchlistAIAlert symbol={stock.symbol} />
+
+                  <Link
+                    to={`/dashboard/market?symbol=${stock.symbol}`}
+                    className="mt-4 w-full bg-indigo-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                    Trade Now
+                  </Link>
 
                   <div className="mt-4 pt-4 border-t border-slate-50">
                     <button

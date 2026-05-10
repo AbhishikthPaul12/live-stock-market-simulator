@@ -76,21 +76,57 @@ function SellModal({ stock, onClose, onConfirm }) {
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block">
               Quantity to Sell
             </label>
-            <div className="relative">
-              <input
-                type="number"
-                min="1"
-                max={stock.quantity}
-                value={qty}
-                onChange={(e) => setQty(Math.min(stock.quantity, Math.max(1, Number(e.target.value))))}
-                className="w-full bg-white border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-black text-xl focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 transition-all outline-none"
-              />
-              <button
-                onClick={() => setQty(stock.quantity)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 bg-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg hover:bg-slate-200 transition-colors"
-              >
-                Max
-              </button>
+            <div className="flex flex-col gap-3">
+              <div className="relative group">
+                <button 
+                  onClick={() => setQty(prev => Math.max(1, (parseInt(prev) || 0) - 1))}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-rose-600 hover:border-rose-100 transition-all active:scale-90 z-10"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M20 12H4" /></svg>
+                </button>
+
+                <input
+                  type="number"
+                  value={qty}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === "" || /^\d+$/.test(val)) {
+                      const num = parseInt(val) || 0;
+                      if (num <= stock.quantity) {
+                        setQty(val);
+                      } else {
+                        setQty(stock.quantity);
+                      }
+                    }
+                  }}
+                  onBlur={() => {
+                    if (!qty || parseInt(qty) < 1) setQty(1);
+                  }}
+                  className="w-full bg-white border-2 border-slate-100 rounded-2xl p-4 px-14 text-center text-slate-900 font-black text-xl focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 transition-all outline-none"
+                />
+
+                <button 
+                  onClick={() => setQty(prev => Math.min(stock.quantity, (parseInt(prev) || 0) + 1))}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center bg-white border border-slate-100 rounded-xl text-slate-400 hover:text-rose-600 hover:border-rose-100 transition-all active:scale-90 z-10"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg>
+                </button>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setQty(stock.quantity)}
+                  className="flex-1 py-2 rounded-xl bg-slate-900 text-[9px] font-black text-white uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-slate-100"
+                >
+                  Sell Max ({stock.quantity})
+                </button>
+                <button
+                  onClick={() => setQty(Math.floor(stock.quantity / 2) || 1)}
+                  className="flex-1 py-2 rounded-xl bg-slate-100 text-[9px] font-black text-slate-500 uppercase tracking-widest hover:bg-slate-200 transition-all"
+                >
+                  Half
+                </button>
+              </div>
             </div>
           </div>
 
@@ -113,8 +149,9 @@ function SellModal({ stock, onClose, onConfirm }) {
             Cancel
           </button>
           <button
+            disabled={!qty || parseInt(qty) <= 0}
             onClick={handleConfirm}
-            className="flex-2 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-rose-600 hover:shadow-rose-100 transition-all active:scale-95"
+            className="flex-2 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-rose-600 hover:shadow-rose-100 transition-all active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
           >
             Confirm Sell
           </button>

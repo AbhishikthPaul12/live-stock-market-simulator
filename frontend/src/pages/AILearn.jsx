@@ -145,7 +145,7 @@ export default function AILearn() {
               </svg>
             </div>
             <span className="text-xs font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
-              Llama-3.2 Powered
+              AI Powered
             </span>
           </div>
           <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight">AI Learning Hub</h1>

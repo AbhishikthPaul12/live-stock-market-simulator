@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { buyStock } from "../api/trade.js";
 import { getAllStocks, addToWatchlist } from "../api/data.js";
 import { getStockInsight, getRecommendations } from "../api/ai.js";
@@ -109,12 +110,16 @@ const StockCard = ({ s, onChartOpen }) => {
                 </span>
                 <RiskBadge level={insight.riskLevel} compact />
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed">{insight.summary}</p>
+              <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
+                {typeof insight.summary === 'object' 
+                  ? (insight.summary.company || insight.summary.description || JSON.stringify(insight.summary)) 
+                  : insight.summary?.replace(/\{|\}|\[|\]|^["\s,]+|["\s,]+$|"/g, "").replace(/,\s*,/g, ",").trim()}
+              </p>
               {insight.shortTermOutlook && (
-                <div className="text-[10px] text-slate-500 font-medium">
+                <p className="text-[10px] text-slate-500 font-medium leading-relaxed whitespace-pre-line">
                   <span className="font-black text-slate-700">Short-term: </span>
                   {insight.shortTermOutlook}
-                </div>
+                </p>
               )}
             </>
           ) : null}
@@ -126,9 +131,11 @@ const StockCard = ({ s, onChartOpen }) => {
 
 // ─── Main Market Page ──────────────────────────────────────────────────────────
 function Market() {
+  const [searchParams] = useSearchParams();
   const { addToast } = useToast();
-  const [searchInput, setSearchInput] = useState("");
-  const [activeSymbol, setActiveSymbol] = useState("");
+  const initialSymbol = searchParams.get("symbol") || "";
+  const [searchInput, setSearchInput] = useState(initialSymbol);
+  const [activeSymbol, setActiveSymbol] = useState(initialSymbol);
   const [chartStock, setChartStock] = useState(null);
   const [allStocks, setAllStocks] = useState([]);
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -179,6 +186,7 @@ function Market() {
   };
 
   async function handleBuy(symbol, qty) {
+    setChartStock(null); // Close modal immediately
     try {
       await buyStock({ symbol, quantity: qty });
       addToast(`Purchase of ${qty} shares of ${symbol} completed!`, "success");
@@ -341,7 +349,7 @@ function Market() {
               <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Search Result</h2>
               <div className="flex-1 h-px bg-slate-100" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 items-start">
               <StockCard s={stock} onChartOpen={setChartStock} />
             </div>
           </div>
@@ -354,7 +362,7 @@ function Market() {
             <div className="flex-1 h-px bg-slate-100" />
             <span className="bg-slate-100 text-slate-400 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">{allStocks.length} Tracked</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 items-start">
             {allStocks.map((s) => (
               <StockCard key={s.symbol} s={s} onChartOpen={setChartStock} />
             ))}
