@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { buyStock } from "../api/trade.js";
 import { getAllStocks, addToWatchlist } from "../api/data.js";
 import { getStockInsight, getRecommendations } from "../api/ai.js";
@@ -112,7 +113,7 @@ const StockCard = ({ s, onChartOpen }) => {
               <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
                 {typeof insight.summary === 'object' 
                   ? (insight.summary.company || insight.summary.description || JSON.stringify(insight.summary)) 
-                  : insight.summary}
+                  : insight.summary?.replace(/\{|\}|\[|\]|^["\s,]+|["\s,]+$|"/g, "").replace(/,\s*,/g, ",").trim()}
               </p>
               {insight.shortTermOutlook && (
                 <p className="text-[10px] text-slate-500 font-medium leading-relaxed whitespace-pre-line">
@@ -130,9 +131,11 @@ const StockCard = ({ s, onChartOpen }) => {
 
 // ─── Main Market Page ──────────────────────────────────────────────────────────
 function Market() {
+  const [searchParams] = useSearchParams();
   const { addToast } = useToast();
-  const [searchInput, setSearchInput] = useState("");
-  const [activeSymbol, setActiveSymbol] = useState("");
+  const initialSymbol = searchParams.get("symbol") || "";
+  const [searchInput, setSearchInput] = useState(initialSymbol);
+  const [activeSymbol, setActiveSymbol] = useState(initialSymbol);
   const [chartStock, setChartStock] = useState(null);
   const [allStocks, setAllStocks] = useState([]);
   const [lastUpdated, setLastUpdated] = useState(new Date());

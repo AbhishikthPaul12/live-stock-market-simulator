@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { getPortfolio } from "../api/data.js";
 import { sellStock } from "../api/trade.js";
 import { getProfile } from "../api/auth.js";
@@ -293,7 +294,7 @@ function Portfolio() {
               <div className="flex justify-between items-center mb-8">
                  <div>
                     <h3 className="text-2xl font-black text-slate-900 tracking-tight">AI Portfolio Insights</h3>
-                    <p className="text-slate-500 text-sm font-medium mt-1">Deep analysis of your holdings using Llama-3.2.</p>
+                    <p className="text-slate-500 text-sm font-medium mt-1">Deep AI analysis of your holdings using.</p>
                  </div>
                  <button 
                    onClick={handleAIAnalyze}
@@ -314,13 +315,15 @@ function Portfolio() {
                       <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2">Risk Score</p>
                       <h4 className="text-5xl font-black text-indigo-700 tracking-tighter">{aiAnalysis.score}</h4>
                       <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full mt-2 inline-block">
-                        Llama-3.2 Powered
+                        AI Powered
                       </span>
                    </div>
                    <div className="lg:col-span-3 space-y-6">
                       <div>
                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Executive Summary</p>
-                         <p className="text-slate-600 font-medium leading-relaxed">{aiAnalysis.summary}</p>
+                          <p className="text-slate-600 font-medium leading-relaxed">
+                            {aiAnalysis.summary?.replace(/\{|\}|\[|\]|^["\s,]+|["\s,]+$|"/g, "").replace(/,\s*,/g, ",").trim()}
+                          </p>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                          <div className="bg-white border border-slate-100 rounded-2xl p-6">
@@ -396,6 +399,13 @@ function Portfolio() {
                               <span className="font-black text-slate-900 text-lg tracking-tight block">{item.symbol}</span>
                               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Global Asset</span>
                               <PortfolioAIInsight symbol={item.symbol} price={current} change={profitPercent} />
+                              <Link 
+                                to={`/dashboard/market?symbol=${item.symbol}`}
+                                className="mt-1 inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-600 transition-colors"
+                              >
+                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                                Trade Now
+                              </Link>
                             </div>
                           </div>
                         </td>

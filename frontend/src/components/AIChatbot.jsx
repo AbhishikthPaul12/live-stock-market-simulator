@@ -238,7 +238,7 @@ export default function AIChatbot() {
                   <p className="text-white font-black text-sm">StockSim AI</p>
                   <div className="flex items-center gap-1.5">
                     <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                    <span className="text-indigo-200 text-[10px] font-medium">Llama-3.2 Powered</span>
+                    <span className="text-indigo-200 text-[10px] font-medium">AI Powered</span>
                   </div>
                 </div>
               </div>
@@ -300,7 +300,7 @@ export default function AIChatbot() {
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder="Ask Llama-3.2 about markets..."
+                      placeholder="Ask AI about markets..."
                       rows={1}
                       className="flex-1 resize-none bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all max-h-28 overflow-y-auto"
                       style={{ lineHeight: "1.5" }}
