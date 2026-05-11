@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getProfile } from "../api/auth.js";
 import { getPortfolio, getWallet, getAllStocks } from "../api/data.js";
 import { getPortfolioAnalysis, getNewsSummary } from "../api/ai.js";
+import { useSocket } from "../context/SocketContext.jsx";
 import { useNavigate } from "react-router-dom";
 import LoadingSkeleton from "../components/ai/LoadingSkeleton.jsx";
 import RiskBadge from "../components/ai/RiskBadge.jsx";
@@ -151,67 +152,23 @@ function Dashboard() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiAnalyzed, setAiAnalyzed] = useState(false);
 
-  async function updatePrices(port) {
-    if (!port || port.length === 0) return;
-    const uniqueSymbols = [...new Set(port.map((s) => s.symbol))];
-    try {
-      const { getAllStocks, getStockData } = await import("../api/data.js");
-      const allStocks = await getAllStocks();
-      const allPricesMap = {};
-      allStocks.forEach((s) => (allPricesMap[s.symbol] = s.price));
-      const newPrices = {};
-      const symbolsToFetch = [];
-      for (const sym of uniqueSymbols) {
-        if (allPricesMap[sym]) {
-          newPrices[sym] = allStocks.find((s) => s.symbol === sym);
-        } else {
-          symbolsToFetch.push(sym);
-        }
-      }
-      if (symbolsToFetch.length > 0) {
-        const results = await Promise.all(symbolsToFetch.map((sym) => getStockData(sym)));
-        results.forEach((res) => {
-          if (res && res.price) newPrices[res.symbol] = res;
-        });
-      }
-      setLivePrices((prev) => ({ ...prev, ...newPrices }));
-    } catch (err) {
-      console.error("Error updating prices", err);
-    }
-  }
+
+
+  // Use Socket.IO for live price updates instead of polling
+  const { livePrices: socketPrices } = useSocket();
 
   useEffect(() => {
-    async function updatePricesLoop(port) {
-      if (!port || port.length === 0) return;
-      const uniqueSymbols = [...new Set(port.map((s) => s.symbol))];
-      try {
-        const { getAllStocks, getStockData } = await import("../api/data.js");
-        const allStocks = await getAllStocks();
-        const allPricesMap = {};
-        allStocks.forEach((s) => (allPricesMap[s.symbol] = s.price));
-        const newPrices = {};
-        const symbolsToFetch = [];
-        for (const sym of uniqueSymbols) {
-          if (allPricesMap[sym]) {
-            newPrices[sym] = allStocks.find((s) => s.symbol === sym);
-          } else {
-            symbolsToFetch.push(sym);
-          }
+    if (Object.keys(socketPrices).length === 0 || portfolio.length === 0) return;
+    setLivePrices((prev) => {
+      const next = { ...prev };
+      for (const item of portfolio) {
+        if (socketPrices[item.symbol]) {
+          next[item.symbol] = socketPrices[item.symbol];
         }
-        if (symbolsToFetch.length > 0) {
-          const results = await Promise.all(symbolsToFetch.map((sym) => getStockData(sym)));
-          results.forEach((res) => {
-            if (res && res.price) newPrices[res.symbol] = res;
-          });
-        }
-        setLivePrices((prev) => ({ ...prev, ...newPrices }));
-      } catch (err) {
-        console.error("Error updating prices", err);
       }
-    }
-    const interval = setInterval(() => updatePricesLoop(portfolio), 5000);
-    return () => clearInterval(interval);
-  }, [portfolio]);
+      return next;
+    });
+  }, [socketPrices, portfolio]);
 
   async function handleAIAnalyze() {
     if (aiLoading) return;

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getWatchlist, removeFromWatchlist } from "../api/data.js";
 import { getStockInsight } from "../api/ai.js";
+import { useSocket } from "../context/SocketContext.jsx";
 import RiskBadge from "../components/ai/RiskBadge.jsx";
 import MiniSparkline from "../components/MiniSparkline.jsx";
 
@@ -136,10 +137,21 @@ function Watchlist() {
     fetchWatchlist();
   }, []);
 
+  // Use Socket.IO for live price updates instead of polling
+  const { livePrices: socketPrices } = useSocket();
+
   useEffect(() => {
-    const interval = setInterval(() => updatePrices(watchlist), 5000);
-    return () => clearInterval(interval);
-  }, [watchlist]);
+    if (Object.keys(socketPrices).length === 0 || watchlist.length === 0) return;
+    setLivePrices((prev) => {
+      const next = { ...prev };
+      for (const item of watchlist) {
+        if (socketPrices[item.symbol]) {
+          next[item.symbol] = socketPrices[item.symbol];
+        }
+      }
+      return next;
+    });
+  }, [socketPrices, watchlist]);
 
   async function removeStock(symbol) {
     try {

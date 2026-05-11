@@ -6,6 +6,7 @@ import { getStockInsight, getRecommendations } from "../api/ai.js";
 import ChartModal from "../components/ChartModal.jsx";
 import { useStockPrices } from "../hooks/useStockPrices.js";
 import { useToast } from "../context/ToastContext.jsx";
+import { useSocket } from "../context/SocketContext.jsx";
 import RecommendationCard from "../components/ai/RecommendationCard.jsx";
 import RiskBadge from "../components/ai/RiskBadge.jsx";
 import LoadingSkeleton from "../components/ai/LoadingSkeleton.jsx";
@@ -150,6 +151,7 @@ function Market() {
   const [recoLoaded, setRecoLoaded] = useState(false);
   const [showRecos, setShowRecos] = useState(true);
 
+  const { livePrices: socketPrices } = useSocket();
   const { stock, loading, error } = useStockPrices(activeSymbol);
 
   async function fetchAll() {
@@ -164,9 +166,17 @@ function Market() {
 
   useEffect(() => {
     fetchAll();
-    const intId = setInterval(fetchAll, 2000);
-    return () => clearInterval(intId);
   }, []);
+
+  // Merge socket updates into allStocks whenever new data arrives
+  useEffect(() => {
+    if (Object.keys(socketPrices).length === 0) return;
+    setAllStocks((prev) => {
+      if (prev.length === 0) return prev;
+      return prev.map((s) => socketPrices[s.symbol] || s);
+    });
+    setLastUpdated(new Date());
+  }, [socketPrices]);
 
   async function handleFetchRecos() {
     if (recoLoading || allStocks.length === 0) return;

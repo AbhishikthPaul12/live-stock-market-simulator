@@ -1,6 +1,18 @@
 import axios from 'axios';
 import Alert from '../models/Alert.js';
 
+// Socket.IO instance — set by server.js after boot
+let io = null;
+
+/**
+ * Called once from server.js to wire up the Socket.IO instance.
+ * This starts broadcasting price updates to all connected clients.
+ */
+export function initSocketEmitter(socketIO) {
+  io = socketIO;
+  console.log("📡 Stock service Socket.IO emitter initialized");
+}
+
 // Helper: Google's S2 favicon service - guaranteed to return an image for any domain
 const gFav = (domain) => `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
 const tLogo = (domain) => `https://cdn.tickerlogos.com/${domain}`;
@@ -97,53 +109,64 @@ INITIAL_STOCKS.forEach(stock => {
   sessionHistory[stock.symbol] = [];
 });
 
-// Batch Real-Time Engine: 5 stocks per second
+// ─── Real-Time Simulation Engine (replaces Finnhub API) ─────────────────────
+// Simulates realistic price movement using random-walk with momentum/mean-reversion.
+// Broadcasts updates via Socket.IO every second.
 let currentIndex = 0;
 const BATCH_SIZE = 5;
 
 setInterval(async () => {
-  const apiKey = process.env.FINNHUB_API_KEY;
-
   const batch = INITIAL_STOCKS.slice(currentIndex, currentIndex + BATCH_SIZE);
   if (batch.length === 0) { currentIndex = 0; return; }
 
+  const updatedStocks = [];
+
   await Promise.all(batch.map(async (stock) => {
     const sym = stock.symbol;
-    try {
-      const res = await axios.get(`https://finnhub.io/api/v1/quote`, {
-        params: { symbol: sym, token: apiKey }
-      });
+    const currentPrice = stockCache[sym].price;
 
-      if (res.data && res.data.c) {
-        const fluctuation = 1 + (Math.random() - 0.5) * 0.0002;
-        stockCache[sym].price = Number((res.data.c * fluctuation).toFixed(2));
-        stockCache[sym].change = Number(res.data.d.toFixed(2));
-      }
-    } catch {
-      const currentPrice = stockCache[sym].price;
-      const fluctuation = 1 + (Math.random() - 0.5) * 0.0005;
-      stockCache[sym].price = Number((currentPrice * fluctuation).toFixed(2));
-      stockCache[sym].change = Number(((stockCache[sym].price - currentPrice) / currentPrice * 100).toFixed(2));
-    }
+    // Realistic random-walk price simulation
+    // Volatility ranges from 0.02% to 0.08% per tick depending on price tier
+    const volatility = currentPrice > 2000 ? 0.0003 : 0.0006;
+    const drift = (Math.random() - 0.498) * volatility; // slight upward bias
+    const newPrice = Number((currentPrice * (1 + drift)).toFixed(2));
+    const priceChange = Number(((newPrice - currentPrice) / currentPrice * 100).toFixed(2));
+
+    stockCache[sym].price = newPrice;
+    stockCache[sym].change = priceChange;
 
     // Record session history point
-    const currentPrice = stockCache[sym].price;
     const historyPoint = {
       date: new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
-      price: currentPrice,
+      price: newPrice,
       timestamp: Date.now()
     };
     
     sessionHistory[sym].push(historyPoint);
     if (sessionHistory[sym].length > 100) sessionHistory[sym].shift(); // Keep last 100 points
 
+    // Collect updated stock for Socket.IO broadcast
+    updatedStocks.push(stockCache[sym]);
+
+    // Evaluate price alerts (unchanged logic)
     try {
       const triggeredAlerts = await Alert.find({ symbol: sym, triggered: false });
       for (const alert of triggeredAlerts) {
-        if ((alert.type === 'ABOVE' && currentPrice >= alert.targetPrice) ||
-            (alert.type === 'BELOW' && currentPrice <= alert.targetPrice)) {
+        if ((alert.type === 'ABOVE' && newPrice >= alert.targetPrice) ||
+            (alert.type === 'BELOW' && newPrice <= alert.targetPrice)) {
           alert.triggered = true;
           await alert.save();
+
+          // Emit alert triggered event via Socket.IO
+          if (io) {
+            io.emit('alertTriggered', {
+              _id: alert._id,
+              symbol: sym,
+              type: alert.type,
+              targetPrice: alert.targetPrice,
+              triggeredAt: new Date().toISOString()
+            });
+          }
         }
       }
     } catch (err) {
@@ -151,40 +174,30 @@ setInterval(async () => {
     }
   }));
 
+  // Broadcast updated stock prices to ALL connected Socket.IO clients
+  if (io && updatedStocks.length > 0) {
+    io.emit('stockUpdate', updatedStocks);
+  }
+
   currentIndex = (currentIndex + BATCH_SIZE) % INITIAL_STOCKS.length;
 }, 1000);
+
+// ─── Exported Functions (unchanged API surface) ─────────────────────────────
 
 export const getAllStocks = async () => Object.values(stockCache);
 
 export const getStockPrice = async (symbol) => {
   const sym = symbol.toUpperCase();
   if (stockCache[sym]) return { price: stockCache[sym].price, change: stockCache[sym].change };
-  try {
-    const apiKey = process.env.FINNHUB_API_KEY;
-    const res = await axios.get(`https://finnhub.io/api/v1/quote`, { params: { symbol: sym, token: apiKey } });
-    if (res.data.c) return { price: res.data.c, change: res.data.d };
-    throw new Error();
-  } catch {
-    return { price: generateDeterministicPrice(sym), change: 0.15 };
-  }
+  // Fallback: generate a deterministic price for unknown symbols
+  return { price: generateDeterministicPrice(sym), change: 0.15 };
 };
 
 export const getStockData = async (symbol) => {
   const sym = symbol.toUpperCase();
   if (stockCache[sym]) return stockCache[sym];
-  try {
-    const apiKey = process.env.FINNHUB_API_KEY;
-    const [quote, profile] = await Promise.all([
-      axios.get(`https://finnhub.io/api/v1/quote`, { params: { symbol: sym, token: apiKey } }),
-      axios.get(`https://finnhub.io/api/v1/stock/profile2`, { params: { symbol: sym, token: apiKey } })
-    ]);
-    if (quote.data.c) {
-      return { symbol: sym, name: profile.data.name || sym, price: quote.data.c, change: quote.data.d, logo: profile.data.logo || gFav("moneycontrol.com") };
-    }
-    throw new Error();
-  } catch {
-    return { symbol: sym, name: `${sym} India`, price: generateDeterministicPrice(sym), change: 0.45, logo: "" };
-  }
+  // Fallback for unknown symbols
+  return { symbol: sym, name: `${sym} India`, price: generateDeterministicPrice(sym), change: 0.45, logo: "" };
 };
 
 const generateMockHistory = async (symbol, timeframe = '1M') => {
@@ -230,63 +243,14 @@ const generateMockHistory = async (symbol, timeframe = '1M') => {
 };
 
 export const getStockHistory = async (symbol, timeframe = '1M') => {
-  try {
-    const apiKey = process.env.FINNHUB_API_KEY;
-    const to = Math.floor(Date.now() / 1000);
-    let from, resolution;
-    switch (timeframe) {
-      case '1D': from = to - 86400; resolution = '5'; break;
-      case '1W': from = to - 604800; resolution = '30'; break;
-      case '1M': from = to - 2592000; resolution = 'D'; break;
-      case '3M': from = to - 7776000; resolution = 'D'; break;
-      case '6M': from = to - 15552000; resolution = 'D'; break;
-      case '1YR': from = to - 31536000; resolution = 'W'; break;
-      case '3YRS': from = to - 94608000; resolution = 'M'; break;
-      default: from = to - 2592000; resolution = 'D';
-    }
-    const res = await axios.get(`https://finnhub.io/api/v1/stock/candle`, {
-      params: { symbol: symbol.toUpperCase(), resolution, from, to, token: apiKey }
-    });
-    if (res.data.s === 'ok') {
-      const apiData = res.data.t.map((t, i) => {
-        const dateObj = new Date(t * 1000);
-        let dateStr;
-        
-        if (timeframe === '1D') {
-          dateStr = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-        } else if (timeframe === '1YR') {
-          dateStr = dateObj.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
-        } else if (timeframe === '3YRS') {
-          dateStr = dateObj.toLocaleDateString('en-IN', { year: 'numeric' });
-        } else if (['3M', '6M'].includes(timeframe)) {
-          dateStr = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-        } else {
-          dateStr = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
-        }
-
-        return {
-          date: dateStr,
-          price: Number(res.data.c[i].toFixed(2)),
-          timestamp: t * 1000
-        };
-      });
-
-      // Merge with session history if timeframe is small
-      if (timeframe === '1D' && sessionHistory[sym]?.length > 0) {
-        return [...apiData, ...sessionHistory[sym]];
-      }
-      return apiData;
-    }
-    throw new Error();
-  } catch {
-    const mockData = await generateMockHistory(symbol, timeframe);
-    const sym = symbol.toUpperCase();
-    if (timeframe === '1D' && sessionHistory[sym]?.length > 0) {
-       // Filter mock data that might overlap with session history
-       const lastSessionTs = sessionHistory[sym][0].timestamp;
-       const filteredMock = mockData.filter(m => (m.timestamp || 0) < lastSessionTs);
-       return [...filteredMock, ...sessionHistory[sym]];
-    }
-    return mockData;
+  const sym = symbol.toUpperCase();
+  // Use mock/simulation history directly (no external API needed)
+  const mockData = await generateMockHistory(symbol, timeframe);
+  if (timeframe === '1D' && sessionHistory[sym]?.length > 0) {
+     // Filter mock data that might overlap with session history
+     const lastSessionTs = sessionHistory[sym][0].timestamp;
+     const filteredMock = mockData.filter(m => (m.timestamp || 0) < lastSessionTs);
+     return [...filteredMock, ...sessionHistory[sym]];
   }
+  return mockData;
 };
