@@ -140,10 +140,30 @@ export const newsSummary = async (req, res) => {
 
 export const riskAnalysis = async (req, res) => {
   try {
-    const { symbol } = req.params;
+    const { symbol } = req.params.symbol ? req.params : req.body;
+    if (!symbol) {
+      return res.status(400).json({ message: "Stock symbol is required" });
+    }
     const response = await aiService.askAI(`Analyze the risk factors for ${symbol} in the current market environment.`);
     res.json({ riskAnalysis: response });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const watchlistInsights = async (req, res) => {
+  try {
+    const { watchlist } = req.body;
+    if (!watchlist) {
+      return res.status(400).json({ message: "Watchlist data is required" });
+    }
+    const insights = await aiService.getWatchlistInsights(watchlist);
+    res.json(insights);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Aliases to match routes
+export const stockAnalysis = stockInsight;
+export const learning = learnConcept;

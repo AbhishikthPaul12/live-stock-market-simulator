@@ -244,13 +244,63 @@ const generateMockHistory = async (symbol, timeframe = '1M') => {
 
 export const getStockHistory = async (symbol, timeframe = '1M') => {
   const sym = symbol.toUpperCase();
-  // Use mock/simulation history directly (no external API needed)
-  const mockData = await generateMockHistory(symbol, timeframe);
-  if (timeframe === '1D' && sessionHistory[sym]?.length > 0) {
-     // Filter mock data that might overlap with session history
-     const lastSessionTs = sessionHistory[sym][0].timestamp;
-     const filteredMock = mockData.filter(m => (m.timestamp || 0) < lastSessionTs);
-     return [...filteredMock, ...sessionHistory[sym]];
+  try {
+    const apiKey = process.env.FINNHUB_API_KEY;
+    const to = Math.floor(Date.now() / 1000);
+    let from, resolution;
+
+    switch (timeframe) {
+      case '1D': from = to - 86400; resolution = '5'; break;
+      case '1W': from = to - 604800; resolution = '30'; break;
+      case '1M': from = to - 2592000; resolution = 'D'; break;
+      case '3M': from = to - 7776000; resolution = 'D'; break;
+      case '6M': from = to - 15552000; resolution = 'D'; break;
+      case '1YR': from = to - 31536000; resolution = 'W'; break;
+      case '3YRS': from = to - 94608000; resolution = 'M'; break;
+      default: from = to - 2592000; resolution = 'D';
+    }
+    const res = await axios.get(`https://finnhub.io/api/v1/stock/candle`, {
+      params: { symbol: symbol.toUpperCase(), resolution, from, to, token: apiKey }
+    });
+    if (res.data.s === 'ok') {
+      const apiData = res.data.t.map((t, i) => {
+        const dateObj = new Date(t * 1000);
+        let dateStr;
+        
+        if (timeframe === '1D') {
+          dateStr = dateObj.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+        } else if (timeframe === '1YR') {
+          dateStr = dateObj.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+        } else if (timeframe === '3YRS') {
+          dateStr = dateObj.toLocaleDateString('en-IN', { year: 'numeric' });
+        } else if (['3M', '6M'].includes(timeframe)) {
+          dateStr = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        } else {
+          dateStr = dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+        }
+
+        return {
+          date: dateStr,
+          price: Number(res.data.c[i].toFixed(2)),
+          timestamp: t * 1000
+        };
+      });
+
+      // Merge with session history if timeframe is small
+      if (timeframe === '1D' && sessionHistory[sym]?.length > 0) {
+        return [...apiData, ...sessionHistory[sym]];
+      }
+      return apiData;
+    }
+    throw new Error();
+  } catch (error) {
+    // Fallback to mock data
+    const mockData = await generateMockHistory(symbol, timeframe);
+    if (timeframe === '1D' && sessionHistory[sym]?.length > 0) {
+       const lastSessionTs = sessionHistory[sym][0].timestamp;
+       const filteredMock = mockData.filter(m => (m.timestamp || 0) < lastSessionTs);
+       return [...filteredMock, ...sessionHistory[sym]];
+    }
+    return mockData;
   }
-  return mockData;
 };
