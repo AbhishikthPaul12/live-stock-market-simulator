@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { getStockData } from '../api/data.js';
+import { useSocket } from '../context/SocketContext.jsx';
 
 export function useStockPrices(symbol) {
   const [stock, setStock] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { livePrices } = useSocket();
 
+  // Initial fetch via REST API for loading state
   useEffect(() => {
     if (!symbol) {
       setStock(null);
@@ -36,13 +39,21 @@ export function useStockPrices(symbol) {
 
     setLoading(true);
     fetchStock();
-    const intervalId = setInterval(fetchStock, 5000);
 
     return () => {
       isMounted = false;
-      clearInterval(intervalId);
     };
   }, [symbol]);
+
+  // Update stock data from Socket.IO whenever new prices arrive
+  useEffect(() => {
+    if (!symbol) return;
+    const sym = symbol.toUpperCase();
+    if (livePrices[sym]) {
+      setStock(livePrices[sym]);
+      setError(null);
+    }
+  }, [livePrices, symbol]);
 
   return { stock, loading, error };
 }

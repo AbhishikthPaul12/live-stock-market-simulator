@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { getWatchlist, removeFromWatchlist } from "../api/data.js";
 import { getStockInsight } from "../api/ai.js";
+import { useSocket } from "../context/SocketContext.jsx";
 import RiskBadge from "../components/ai/RiskBadge.jsx";
+import MiniSparkline from "../components/MiniSparkline.jsx";
 
 // Per-stock AI alert component
-function WatchlistAIAlert({ symbol }) {
+function WatchlistAIAlert({ symbol, price, change }) {
   const [insight, setInsight] = useState(null);
   const [loading, setLoading] = useState(false);
   const [shown, setShown] = useState(false);
@@ -14,7 +17,7 @@ function WatchlistAIAlert({ symbol }) {
     setShown(true);
     setLoading(true);
     try {
-      const data = await getStockInsight(symbol, 0, 0);
+      const data = await getStockInsight(symbol, price || 0, change || 0);
       setInsight(data);
     } catch {
       setInsight({ summary: "AI insight temporarily unavailable.", sentiment: "Neutral", riskLevel: "Medium" });
@@ -59,7 +62,23 @@ function WatchlistAIAlert({ symbol }) {
                 </span>
                 <RiskBadge level={insight.riskLevel || "Medium"} compact />
               </div>
-              <p className="text-[10px] text-slate-600 leading-relaxed">{insight.summary}</p>
+              <p className="text-[10px] text-slate-600 leading-relaxed whitespace-pre-line">
+                {typeof insight.summary === 'object' 
+                  ? (insight.summary.company || insight.summary.description || JSON.stringify(insight.summary)) 
+                  : insight.summary?.replace(/\{|\}|\[|\]|^["\s,]+|["\s,]+$|"/g, "").replace(/,\s*,/g, ",").trim()}
+              </p>
+              {insight.shortTermOutlook && (
+                <div className="text-[9px] text-slate-500 font-medium whitespace-pre-line">
+                  <span className="font-black text-slate-700">Outlook: </span>
+                  {insight.shortTermOutlook}
+                </div>
+              )}
+              {insight.volatility && (
+                <div className="text-[9px] text-slate-500 font-medium whitespace-pre-line">
+                  <span className="font-black text-slate-700">Volatility: </span>
+                  {insight.volatility}
+                </div>
+              )}
             </>
           ) : null}
         </div>
@@ -70,12 +89,43 @@ function WatchlistAIAlert({ symbol }) {
 
 function Watchlist() {
   const [watchlist, setWatchlist] = useState([]);
+  const [livePrices, setLivePrices] = useState({});
   const [loading, setLoading] = useState(true);
+
+  async function updatePrices(list) {
+    if (!list || list.length === 0) return;
+    const uniqueSymbols = [...new Set(list.map((s) => s.symbol))];
+    try {
+      const { getAllStocks, getStockData } = await import("../api/data.js");
+      const allStocks = await getAllStocks();
+      const allPricesMap = {};
+      allStocks.forEach((s) => (allPricesMap[s.symbol] = s.price));
+      const newPrices = {};
+      const symbolsToFetch = [];
+      for (const sym of uniqueSymbols) {
+        if (allPricesMap[sym]) {
+          newPrices[sym] = allStocks.find((s) => s.symbol === sym);
+        } else {
+          symbolsToFetch.push(sym);
+        }
+      }
+      if (symbolsToFetch.length > 0) {
+        const results = await Promise.all(symbolsToFetch.map((sym) => getStockData(sym)));
+        results.forEach((res) => {
+          if (res && res.price) newPrices[res.symbol] = res;
+        });
+      }
+      setLivePrices((prev) => ({ ...prev, ...newPrices }));
+    } catch (err) {
+      console.error("Error updating watchlist prices", err);
+    }
+  }
 
   async function fetchWatchlist() {
     try {
       const data = await getWatchlist();
       setWatchlist(data);
+      await updatePrices(data);
     } catch (error) {
       console.error("Error fetching watchlist:", error);
     } finally {
@@ -86,6 +136,22 @@ function Watchlist() {
   useEffect(() => {
     fetchWatchlist();
   }, []);
+
+  // Use Socket.IO for live price updates instead of polling
+  const { livePrices: socketPrices } = useSocket();
+
+  useEffect(() => {
+    if (Object.keys(socketPrices).length === 0 || watchlist.length === 0) return;
+    setLivePrices((prev) => {
+      const next = { ...prev };
+      for (const item of watchlist) {
+        if (socketPrices[item.symbol]) {
+          next[item.symbol] = socketPrices[item.symbol];
+        }
+      }
+      return next;
+    });
+  }, [socketPrices, watchlist]);
 
   async function removeStock(symbol) {
     try {
@@ -146,10 +212,38 @@ function Watchlist() {
                     </div>
                     <h2 className="font-black text-2xl tracking-tighter text-slate-900 uppercase">{stock.symbol}</h2>
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1 truncate">{stock.name}</p>
+                    
+                    {/* Live Data */}
+                    <div className="mt-4 flex items-end justify-between">
+                      <div>
+                        <p className="text-[9px] text-slate-300 font-black uppercase tracking-widest mb-0.5">Live Price</p>
+                        <p className="text-xl font-black text-slate-900 font-mono tracking-tight">
+                          ₹{(livePrices[stock.symbol]?.price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <MiniSparkline price={livePrices[stock.symbol]?.price || 0} change={livePrices[stock.symbol]?.change || 0} width={64} height={24} />
+                        <div className={`px-2 py-0.5 rounded-lg text-[10px] font-black border ${livePrices[stock.symbol]?.change >= 0 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                          {livePrices[stock.symbol]?.change >= 0 ? '▲' : '▼'} {Math.abs(livePrices[stock.symbol]?.change || 0).toFixed(2)}%
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* AI Alert Section */}
-                  <WatchlistAIAlert symbol={stock.symbol} />
+                  <WatchlistAIAlert 
+                    symbol={stock.symbol} 
+                    price={livePrices[stock.symbol]?.price} 
+                    change={livePrices[stock.symbol]?.change} 
+                  />
+
+                  <Link
+                    to={`/dashboard/market?symbol=${stock.symbol}`}
+                    className="mt-4 w-full bg-indigo-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                    Trade Now
+                  </Link>
 
                   <div className="mt-4 pt-4 border-t border-slate-50">
                     <button

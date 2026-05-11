@@ -1,13 +1,16 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { buyStock } from "../api/trade.js";
 import { getAllStocks, addToWatchlist } from "../api/data.js";
 import { getStockInsight, getRecommendations } from "../api/ai.js";
 import ChartModal from "../components/ChartModal.jsx";
 import { useStockPrices } from "../hooks/useStockPrices.js";
 import { useToast } from "../context/ToastContext.jsx";
+import { useSocket } from "../context/SocketContext.jsx";
 import RecommendationCard from "../components/ai/RecommendationCard.jsx";
 import RiskBadge from "../components/ai/RiskBadge.jsx";
 import LoadingSkeleton from "../components/ai/LoadingSkeleton.jsx";
+import MiniSparkline from "../components/MiniSparkline.jsx";
 
 // ─── Stock Card (with AI Insight toggle) ──────────────────────────────────────
 const StockCard = ({ s, onChartOpen }) => {
@@ -67,11 +70,14 @@ const StockCard = ({ s, onChartOpen }) => {
           <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-2 truncate max-w-[180px]">{s.name}</p>
         </div>
 
-        <div className="flex justify-between items-end mt-12">
+        <div className="flex justify-between items-end mt-8">
           <div>
             <p className="text-[10px] text-slate-300 font-black uppercase tracking-widest mb-1">Live Price</p>
             <p className="text-2xl font-black text-slate-900 font-mono tracking-tight">₹{s.price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p>
           </div>
+          <MiniSparkline price={s.price} change={s.change || 0} width={72} height={28} />
+        </div>
+        <div className="flex justify-end mt-3">
           <div className="bg-slate-900 text-white p-3.5 rounded-2xl shadow-xl shadow-slate-200 group-hover:bg-indigo-600 transition-all transform active:scale-90">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
@@ -109,12 +115,16 @@ const StockCard = ({ s, onChartOpen }) => {
                 </span>
                 <RiskBadge level={insight.riskLevel} compact />
               </div>
-              <p className="text-xs text-slate-600 leading-relaxed">{insight.summary}</p>
+              <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
+                {typeof insight.summary === 'object' 
+                  ? (insight.summary.company || insight.summary.description || JSON.stringify(insight.summary)) 
+                  : insight.summary?.replace(/\{|\}|\[|\]|^["\s,]+|["\s,]+$|"/g, "").replace(/,\s*,/g, ",").trim()}
+              </p>
               {insight.shortTermOutlook && (
-                <div className="text-[10px] text-slate-500 font-medium">
+                <p className="text-[10px] text-slate-500 font-medium leading-relaxed whitespace-pre-line">
                   <span className="font-black text-slate-700">Short-term: </span>
                   {insight.shortTermOutlook}
-                </div>
+                </p>
               )}
             </>
           ) : null}
@@ -126,9 +136,11 @@ const StockCard = ({ s, onChartOpen }) => {
 
 // ─── Main Market Page ──────────────────────────────────────────────────────────
 function Market() {
+  const [searchParams] = useSearchParams();
   const { addToast } = useToast();
-  const [searchInput, setSearchInput] = useState("");
-  const [activeSymbol, setActiveSymbol] = useState("");
+  const initialSymbol = searchParams.get("symbol") || "";
+  const [searchInput, setSearchInput] = useState(initialSymbol);
+  const [activeSymbol, setActiveSymbol] = useState(initialSymbol);
   const [chartStock, setChartStock] = useState(null);
   const [allStocks, setAllStocks] = useState([]);
   const [lastUpdated, setLastUpdated] = useState(new Date());
@@ -139,6 +151,7 @@ function Market() {
   const [recoLoaded, setRecoLoaded] = useState(false);
   const [showRecos, setShowRecos] = useState(true);
 
+  const { livePrices: socketPrices } = useSocket();
   const { stock, loading, error } = useStockPrices(activeSymbol);
 
   async function fetchAll() {
@@ -153,9 +166,17 @@ function Market() {
 
   useEffect(() => {
     fetchAll();
-    const intId = setInterval(fetchAll, 2000);
-    return () => clearInterval(intId);
   }, []);
+
+  // Merge socket updates into allStocks whenever new data arrives
+  useEffect(() => {
+    if (Object.keys(socketPrices).length === 0) return;
+    setAllStocks((prev) => {
+      if (prev.length === 0) return prev;
+      return prev.map((s) => socketPrices[s.symbol] || s);
+    });
+    setLastUpdated(new Date());
+  }, [socketPrices]);
 
   async function handleFetchRecos() {
     if (recoLoading || allStocks.length === 0) return;
@@ -179,6 +200,7 @@ function Market() {
   };
 
   async function handleBuy(symbol, qty) {
+    setChartStock(null); // Close modal immediately
     try {
       await buyStock({ symbol, quantity: qty });
       addToast(`Purchase of ${qty} shares of ${symbol} completed!`, "success");
@@ -247,7 +269,7 @@ function Market() {
             </div>
             <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">AI Picks</h2>
             <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
-              Gemini Powered
+              AI Powered
             </span>
             <div className="flex-1 h-px bg-slate-100" />
             {!recoLoaded && (
@@ -341,11 +363,13 @@ function Market() {
               <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Search Result</h2>
               <div className="flex-1 h-px bg-slate-100" />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 items-start">
               <StockCard s={stock} onChartOpen={setChartStock} />
             </div>
           </div>
         )}
+
+
 
         {/* All Stocks */}
         <div>
@@ -354,7 +378,7 @@ function Market() {
             <div className="flex-1 h-px bg-slate-100" />
             <span className="bg-slate-100 text-slate-400 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest">{allStocks.length} Tracked</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 items-start">
             {allStocks.map((s) => (
               <StockCard key={s.symbol} s={s} onChartOpen={setChartStock} />
             ))}

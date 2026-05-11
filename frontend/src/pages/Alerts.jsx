@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { getAlerts, createAlert, deleteAlert, getAllStocks } from "../api/data.js";
+import { useSocket } from "../context/SocketContext.jsx";
 
 function Alerts() {
   const [alerts, setAlerts] = useState([]);
@@ -21,11 +22,23 @@ function Alerts() {
       }
     }
     fetchData();
-
-    // Poll for updates every 5 seconds to see triggered status
-    const interval = setInterval(fetchData, 5000);
-    return () => clearInterval(interval);
   }, []);
+
+  // Use Socket.IO for real-time alert trigger notifications
+  const { alertEvents } = useSocket();
+
+  useEffect(() => {
+    if (alertEvents.length === 0) return;
+    // When a new alert fires, re-fetch alerts to get latest triggered status
+    (async () => {
+      try {
+        const updated = await getAlerts();
+        setAlerts(Array.isArray(updated) ? updated : []);
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+  }, [alertEvents]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

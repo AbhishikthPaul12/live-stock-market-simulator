@@ -18,6 +18,7 @@ import ResetPassword from "./pages/ResetPassword";
 import AILearn from "./pages/AILearn";
 
 import { ToastProvider } from "./context/ToastContext";
+import { SocketProvider } from "./context/SocketContext";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -29,6 +30,7 @@ function App() {
   }, []);
 
   return (
+    <SocketProvider>
     <ToastProvider>
       <Router>
         <Routes>
@@ -62,6 +64,7 @@ function App() {
         </Routes>
       </Router>
     </ToastProvider>
+    </SocketProvider>
   );
 }
 

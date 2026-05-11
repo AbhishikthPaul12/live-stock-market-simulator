@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { getProfile } from "../api/auth.js";
-import { getPortfolio, getWallet } from "../api/data.js";
+import { getPortfolio, getWallet, getAllStocks } from "../api/data.js";
 import { getPortfolioAnalysis, getNewsSummary } from "../api/ai.js";
+import { useSocket } from "../context/SocketContext.jsx";
 import { useNavigate } from "react-router-dom";
 import LoadingSkeleton from "../components/ai/LoadingSkeleton.jsx";
 import RiskBadge from "../components/ai/RiskBadge.jsx";
+import MiniSparkline from "../components/MiniSparkline.jsx";
 
 // Mock news headlines for AI summarization
 const MOCK_HEADLINES = [
@@ -30,6 +32,82 @@ function SentimentPill({ sentiment }) {
   );
 }
 
+// Market Status Component
+function MarketStatus() {
+  const [status, setStatus] = useState({ isOpen: false, message: "", type: "closed" });
+
+  useEffect(() => {
+    const checkStatus = () => {
+      const now = new Date();
+      const day = now.getDay();
+      const hours = now.getHours();
+      const minutes = now.getMinutes();
+      const currentTime = hours * 60 + minutes;
+
+      const openTime = 9 * 60 + 15; // 09:15 AM
+      const closeTime = 15 * 60 + 30; // 03:30 PM
+
+      // Weekends
+      if (day === 0 || day === 6) {
+        setStatus({ isOpen: false, message: "Market Closed (Weekend)", type: "weekend" });
+        return;
+      }
+
+      if (currentTime >= openTime && currentTime < closeTime) {
+        const diff = closeTime - currentTime;
+        const h = Math.floor(diff / 60);
+        const m = diff % 60;
+        setStatus({ 
+          isOpen: true, 
+          message: `Market Open • Closes in ${h}h ${m}m`, 
+          type: "open" 
+        });
+      } else {
+        let diff;
+        if (currentTime < openTime) {
+          diff = openTime - currentTime;
+        } else {
+          diff = (24 * 60 - currentTime) + openTime;
+        }
+        const h = Math.floor(diff / 60);
+        const m = diff % 60;
+        setStatus({ 
+          isOpen: false, 
+          message: `Market Closed • Opens in ${h}h ${m}m`, 
+          type: "closed" 
+        });
+      }
+    };
+
+    checkStatus();
+    const interval = setInterval(checkStatus, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const styles = {
+    open: "bg-emerald-500 text-white shadow-emerald-200",
+    closed: "bg-slate-800 text-white shadow-slate-200",
+    weekend: "bg-amber-500 text-white shadow-amber-200"
+  };
+
+  return (
+    <div className={`mb-8 px-6 py-3 rounded-2xl flex items-center justify-between shadow-lg transition-all duration-500 ${styles[status.type]}`}>
+      <div className="flex items-center gap-3">
+        <div className="relative">
+          <div className={`w-3 h-3 rounded-full ${status.isOpen ? 'bg-white animate-pulse' : 'bg-white/50'}`}></div>
+          {status.isOpen && <div className="absolute inset-0 w-3 h-3 rounded-full bg-white animate-ping opacity-75"></div>}
+        </div>
+        <span className="text-xs font-black uppercase tracking-[0.2em]">{status.message}</span>
+      </div>
+      <div className="hidden md:flex items-center gap-4 text-[10px] font-black uppercase tracking-widest opacity-80">
+        <span>NSE • BSE Live Feed</span>
+        <div className="w-px h-3 bg-white/20"></div>
+        <span>IST 09:15 - 15:30</span>
+      </div>
+    </div>
+  );
+}
+
 function Dashboard() {
   const [wallet, setWallet] = useState(0);
   const [portfolio, setPortfolio] = useState([]);
@@ -42,14 +120,22 @@ function Dashboard() {
   const [newsData, setNewsData] = useState([]);
   const [newsLoading, setNewsLoading] = useState(false);
   const [newsLoaded, setNewsLoaded] = useState(false);
+  const [topGainers, setTopGainers] = useState([]);
+  const [topLosers, setTopLosers] = useState([]);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [w, p, profile] = await Promise.all([getWallet(), getPortfolio(), getProfile()]);
+        const [w, p, profile, stocks] = await Promise.all([getWallet(), getPortfolio(), getProfile(), getAllStocks()]);
         setWallet(w.walletBalance);
         setPortfolio(p);
         setRealizedProfit(profile.realizedProfit || 0);
+        
+        // Calculate Gainers/Losers
+        const sorted = [...stocks].sort((a, b) => b.change - a.change);
+        setTopGainers(sorted.slice(0, 4));
+        setTopLosers([...sorted].reverse().slice(0, 4));
+
         await updatePrices(p);
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
@@ -66,67 +152,23 @@ function Dashboard() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiAnalyzed, setAiAnalyzed] = useState(false);
 
-  async function updatePrices(port) {
-    if (!port || port.length === 0) return;
-    const uniqueSymbols = [...new Set(port.map((s) => s.symbol))];
-    try {
-      const { getAllStocks, getStockData } = await import("../api/data.js");
-      const allStocks = await getAllStocks();
-      const allPricesMap = {};
-      allStocks.forEach((s) => (allPricesMap[s.symbol] = s.price));
-      const newPrices = {};
-      const symbolsToFetch = [];
-      for (const sym of uniqueSymbols) {
-        if (allPricesMap[sym]) {
-          newPrices[sym] = allStocks.find((s) => s.symbol === sym);
-        } else {
-          symbolsToFetch.push(sym);
-        }
-      }
-      if (symbolsToFetch.length > 0) {
-        const results = await Promise.all(symbolsToFetch.map((sym) => getStockData(sym)));
-        results.forEach((res) => {
-          if (res && res.price) newPrices[res.symbol] = res;
-        });
-      }
-      setLivePrices((prev) => ({ ...prev, ...newPrices }));
-    } catch (err) {
-      console.error("Error updating prices", err);
-    }
-  }
+
+
+  // Use Socket.IO for live price updates instead of polling
+  const { livePrices: socketPrices } = useSocket();
 
   useEffect(() => {
-    async function updatePricesLoop(port) {
-      if (!port || port.length === 0) return;
-      const uniqueSymbols = [...new Set(port.map((s) => s.symbol))];
-      try {
-        const { getAllStocks, getStockData } = await import("../api/data.js");
-        const allStocks = await getAllStocks();
-        const allPricesMap = {};
-        allStocks.forEach((s) => (allPricesMap[s.symbol] = s.price));
-        const newPrices = {};
-        const symbolsToFetch = [];
-        for (const sym of uniqueSymbols) {
-          if (allPricesMap[sym]) {
-            newPrices[sym] = allStocks.find((s) => s.symbol === sym);
-          } else {
-            symbolsToFetch.push(sym);
-          }
+    if (Object.keys(socketPrices).length === 0 || portfolio.length === 0) return;
+    setLivePrices((prev) => {
+      const next = { ...prev };
+      for (const item of portfolio) {
+        if (socketPrices[item.symbol]) {
+          next[item.symbol] = socketPrices[item.symbol];
         }
-        if (symbolsToFetch.length > 0) {
-          const results = await Promise.all(symbolsToFetch.map((sym) => getStockData(sym)));
-          results.forEach((res) => {
-            if (res && res.price) newPrices[res.symbol] = res;
-          });
-        }
-        setLivePrices((prev) => ({ ...prev, ...newPrices }));
-      } catch (err) {
-        console.error("Error updating prices", err);
       }
-    }
-    const interval = setInterval(() => updatePricesLoop(portfolio), 5000);
-    return () => clearInterval(interval);
-  }, [portfolio]);
+      return next;
+    });
+  }, [socketPrices, portfolio]);
 
   async function handleAIAnalyze() {
     if (aiLoading) return;
@@ -171,6 +213,15 @@ function Dashboard() {
     return acc + (current - item.buyPrice) * item.quantity;
   }, 0);
 
+  const dailyChange = portfolio.reduce((acc, item) => {
+    const s = livePrices[item.symbol];
+    if (!s) return acc;
+    const prevClose = s.price / (1 + (s.change || 0) / 100);
+    return acc + (s.price - prevClose) * item.quantity;
+  }, 0);
+
+  const dailyChangePercent = portfolioValue > 0 ? (dailyChange / (portfolioValue - dailyChange)) * 100 : 0;
+
   const totalProfit = realizedProfit + profit;
 
   if (loading) {
@@ -195,6 +246,8 @@ function Dashboard() {
           </div>
         </header>
 
+        <MarketStatus />
+
         {/* STAT CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {/* WALLET */}
@@ -215,18 +268,20 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* ASSETS */}
+          {/* DAY'S G/L */}
           <div className="bg-white p-7 rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 transition-all">
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-600">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${dailyChange >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
               </div>
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Holdings</span>
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400">Day's G/L</span>
             </div>
-            <p className="text-3xl font-black text-slate-900 tracking-tight">{portfolio.length}</p>
-            <p className="text-[10px] font-bold text-slate-400 mt-4 uppercase tracking-widest flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-              Active Positions
+            <p className={`text-3xl font-black tracking-tight ${dailyChange >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+              {dailyChange >= 0 ? '+' : ''}₹{Math.abs(dailyChange).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+            <p className={`text-[10px] font-black mt-4 uppercase tracking-widest flex items-center gap-2 ${dailyChange >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${dailyChange >= 0 ? 'bg-emerald-400' : 'bg-rose-400'} animate-pulse`}></span>
+              {dailyChange >= 0 ? '+' : ''}{dailyChangePercent.toFixed(2)}% Today
             </p>
           </div>
 
@@ -386,6 +441,75 @@ function Dashboard() {
           </div>
         </div>
 
+        {/* MARKET MOVERS */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
+          {/* TOP GAINERS */}
+          <div className="bg-white rounded-[40px] border border-slate-200 shadow-sm overflow-hidden">
+             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-emerald-50/20">
+                <div className="flex items-center gap-2">
+                   <div className="w-8 h-8 bg-emerald-500 rounded-xl flex items-center justify-center text-white">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                   </div>
+                   <h3 className="font-black text-slate-900 tracking-tight">Top Gainers</h3>
+                </div>
+                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 px-3 py-1 rounded-full">Bullish</span>
+             </div>
+             <div className="p-4 space-y-2">
+                {topGainers.map((s) => (
+                  <div key={s.symbol} onClick={() => navigate(`/dashboard/market?symbol=${s.symbol}`)} className="flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 transition-all cursor-pointer group">
+                     <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-slate-400 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+                           {s.symbol[0]}
+                        </div>
+                        <div>
+                           <p className="font-black text-slate-900 text-sm">{s.symbol}</p>
+                           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{s.name}</p>
+                        </div>
+                     </div>
+                     <MiniSparkline price={s.price} change={s.change || 0} width={64} height={24} />
+                     <div className="text-right">
+                        <p className="font-black text-slate-900 text-sm">₹{s.price.toLocaleString('en-IN')}</p>
+                        <p className="text-xs font-black text-emerald-500">+{s.change.toFixed(2)}%</p>
+                     </div>
+                  </div>
+                ))}
+             </div>
+          </div>
+
+          {/* TOP LOSERS */}
+          <div className="bg-white rounded-[40px] border border-slate-200 shadow-sm overflow-hidden">
+             <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-rose-50/20">
+                <div className="flex items-center gap-2">
+                   <div className="w-8 h-8 bg-rose-500 rounded-xl flex items-center justify-center text-white">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 17H5m0 0V9m0 8l8-8 4 4 6-6" /></svg>
+                   </div>
+                   <h3 className="font-black text-slate-900 tracking-tight">Top Losers</h3>
+                </div>
+                <span className="text-[10px] font-black text-rose-600 uppercase tracking-widest bg-rose-50 px-3 py-1 rounded-full">Bearish</span>
+             </div>
+             <div className="p-4 space-y-2">
+                {topLosers.map((s) => (
+                  <div key={s.symbol} onClick={() => navigate(`/dashboard/market?symbol=${s.symbol}`)} className="flex items-center justify-between p-4 rounded-2xl hover:bg-slate-50 transition-all cursor-pointer group">
+                     <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-slate-400 group-hover:bg-rose-500 group-hover:text-white transition-colors">
+                           {s.symbol[0]}
+                        </div>
+                        <div>
+                           <p className="font-black text-slate-900 text-sm">{s.symbol}</p>
+                           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{s.name}</p>
+                        </div>
+                     </div>
+                     <MiniSparkline price={s.price} change={s.change || 0} width={64} height={24} />
+                     <div className="text-right">
+                        <p className="font-black text-slate-900 text-sm">₹{s.price.toLocaleString('en-IN')}</p>
+                        <p className="text-xs font-black text-rose-500">{s.change.toFixed(2)}%</p>
+                     </div>
+                  </div>
+                ))}
+             </div>
+          </div>
+        </div>
+
         {/* AI NEWS SUMMARIZER */}
         <div className="mt-10">
           <div className="flex items-center gap-3 mb-6">
@@ -394,9 +518,9 @@ function Dashboard() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
               </svg>
             </div>
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">AI Market News</h2>
+            <h2 className="text-xl font-black text-slate-900 tracking-tight">Market News</h2>
             <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
-              Llama-3.2 Summarized
+              AI Summarized
             </span>
             <div className="flex-1"></div>
             {!newsLoaded && (
