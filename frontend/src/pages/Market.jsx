@@ -259,7 +259,7 @@ function Market() {
             </div>
             <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">AI Picks</h2>
             <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
-              Gemini Powered
+              AI Powered
             </span>
             <div className="flex-1 h-px bg-slate-100" />
             {!recoLoaded && (
@@ -358,6 +358,8 @@ function Market() {
             </div>
           </div>
         )}
+
+
 
         {/* All Stocks */}
         <div>
