@@ -136,7 +136,9 @@ function Dashboard() {
         setTopGainers(sorted.slice(0, 4));
         setTopLosers([...sorted].reverse().slice(0, 4));
 
-        await updatePrices(p);
+        const priceMap = {};
+        stocks.forEach(s => { priceMap[s.symbol] = s; });
+        setLivePrices(priceMap);
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
       } finally {

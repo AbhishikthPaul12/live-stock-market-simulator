@@ -101,9 +101,11 @@ const stockCache = {};
 const sessionHistory = {}; // Stores last 60 minutes of price points
 
 INITIAL_STOCKS.forEach(stock => {
+  const startPrice = generateDeterministicPrice(stock.symbol);
   stockCache[stock.symbol] = {
     ...stock,
-    price: generateDeterministicPrice(stock.symbol),
+    price: startPrice,
+    openPrice: startPrice,
     change: 0
   };
   sessionHistory[stock.symbol] = [];
@@ -130,7 +132,8 @@ setInterval(async () => {
     const volatility = currentPrice > 2000 ? 0.0003 : 0.0006;
     const drift = (Math.random() - 0.498) * volatility; // slight upward bias
     const newPrice = Number((currentPrice * (1 + drift)).toFixed(2));
-    const priceChange = Number(((newPrice - currentPrice) / currentPrice * 100).toFixed(2));
+    const openPrice = stockCache[sym].openPrice || currentPrice;
+    const priceChange = Number(((newPrice - openPrice) / openPrice * 100).toFixed(2));
 
     stockCache[sym].price = newPrice;
     stockCache[sym].change = priceChange;
