@@ -239,6 +239,9 @@ export default function Analytics() {
           </div>
         </div>
 
+        </div>
+
+
         {/* Indian Market Index Overview */}
         <div className="mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {[
@@ -270,7 +273,7 @@ export default function Analytics() {
               </div>
               <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">AI Trend Forecast</h2>
               <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest bg-indigo-50 border border-indigo-100 px-3 py-1 rounded-full">
-                Gemini Powered
+                AI Powered
               </span>
               <div className="flex-1 h-px bg-slate-100" />
             </div>
@@ -290,6 +293,5 @@ export default function Analytics() {
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
       `}</style>
       </div>
-    </div>
   );
 }
