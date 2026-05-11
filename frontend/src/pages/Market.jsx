@@ -9,6 +9,7 @@ import { useToast } from "../context/ToastContext.jsx";
 import RecommendationCard from "../components/ai/RecommendationCard.jsx";
 import RiskBadge from "../components/ai/RiskBadge.jsx";
 import LoadingSkeleton from "../components/ai/LoadingSkeleton.jsx";
+import MiniSparkline from "../components/MiniSparkline.jsx";
 
 // ─── Stock Card (with AI Insight toggle) ──────────────────────────────────────
 const StockCard = ({ s, onChartOpen }) => {
@@ -68,11 +69,14 @@ const StockCard = ({ s, onChartOpen }) => {
           <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-2 truncate max-w-[180px]">{s.name}</p>
         </div>
 
-        <div className="flex justify-between items-end mt-12">
+        <div className="flex justify-between items-end mt-8">
           <div>
             <p className="text-[10px] text-slate-300 font-black uppercase tracking-widest mb-1">Live Price</p>
             <p className="text-2xl font-black text-slate-900 font-mono tracking-tight">₹{s.price.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</p>
           </div>
+          <MiniSparkline price={s.price} change={s.change || 0} width={72} height={28} />
+        </div>
+        <div className="flex justify-end mt-3">
           <div className="bg-slate-900 text-white p-3.5 rounded-2xl shadow-xl shadow-slate-200 group-hover:bg-indigo-600 transition-all transform active:scale-90">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />

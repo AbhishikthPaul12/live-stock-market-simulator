@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { getWatchlist, removeFromWatchlist } from "../api/data.js";
 import { getStockInsight } from "../api/ai.js";
 import RiskBadge from "../components/ai/RiskBadge.jsx";
+import MiniSparkline from "../components/MiniSparkline.jsx";
 
 // Per-stock AI alert component
-function WatchlistAIAlert({ symbol }) {
+function WatchlistAIAlert({ symbol, price, change }) {
   const [insight, setInsight] = useState(null);
   const [loading, setLoading] = useState(false);
   const [shown, setShown] = useState(false);
@@ -15,7 +16,7 @@ function WatchlistAIAlert({ symbol }) {
     setShown(true);
     setLoading(true);
     try {
-      const data = await getStockInsight(symbol, 0, 0);
+      const data = await getStockInsight(symbol, price || 0, change || 0);
       setInsight(data);
     } catch {
       setInsight({ summary: "AI insight temporarily unavailable.", sentiment: "Neutral", riskLevel: "Medium" });
@@ -87,12 +88,43 @@ function WatchlistAIAlert({ symbol }) {
 
 function Watchlist() {
   const [watchlist, setWatchlist] = useState([]);
+  const [livePrices, setLivePrices] = useState({});
   const [loading, setLoading] = useState(true);
+
+  async function updatePrices(list) {
+    if (!list || list.length === 0) return;
+    const uniqueSymbols = [...new Set(list.map((s) => s.symbol))];
+    try {
+      const { getAllStocks, getStockData } = await import("../api/data.js");
+      const allStocks = await getAllStocks();
+      const allPricesMap = {};
+      allStocks.forEach((s) => (allPricesMap[s.symbol] = s.price));
+      const newPrices = {};
+      const symbolsToFetch = [];
+      for (const sym of uniqueSymbols) {
+        if (allPricesMap[sym]) {
+          newPrices[sym] = allStocks.find((s) => s.symbol === sym);
+        } else {
+          symbolsToFetch.push(sym);
+        }
+      }
+      if (symbolsToFetch.length > 0) {
+        const results = await Promise.all(symbolsToFetch.map((sym) => getStockData(sym)));
+        results.forEach((res) => {
+          if (res && res.price) newPrices[res.symbol] = res;
+        });
+      }
+      setLivePrices((prev) => ({ ...prev, ...newPrices }));
+    } catch (err) {
+      console.error("Error updating watchlist prices", err);
+    }
+  }
 
   async function fetchWatchlist() {
     try {
       const data = await getWatchlist();
       setWatchlist(data);
+      await updatePrices(data);
     } catch (error) {
       console.error("Error fetching watchlist:", error);
     } finally {
@@ -103,6 +135,11 @@ function Watchlist() {
   useEffect(() => {
     fetchWatchlist();
   }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => updatePrices(watchlist), 5000);
+    return () => clearInterval(interval);
+  }, [watchlist]);
 
   async function removeStock(symbol) {
     try {
@@ -163,10 +200,30 @@ function Watchlist() {
                     </div>
                     <h2 className="font-black text-2xl tracking-tighter text-slate-900 uppercase">{stock.symbol}</h2>
                     <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1 truncate">{stock.name}</p>
+                    
+                    {/* Live Data */}
+                    <div className="mt-4 flex items-end justify-between">
+                      <div>
+                        <p className="text-[9px] text-slate-300 font-black uppercase tracking-widest mb-0.5">Live Price</p>
+                        <p className="text-xl font-black text-slate-900 font-mono tracking-tight">
+                          ₹{(livePrices[stock.symbol]?.price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <MiniSparkline price={livePrices[stock.symbol]?.price || 0} change={livePrices[stock.symbol]?.change || 0} width={64} height={24} />
+                        <div className={`px-2 py-0.5 rounded-lg text-[10px] font-black border ${livePrices[stock.symbol]?.change >= 0 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'}`}>
+                          {livePrices[stock.symbol]?.change >= 0 ? '▲' : '▼'} {Math.abs(livePrices[stock.symbol]?.change || 0).toFixed(2)}%
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* AI Alert Section */}
-                  <WatchlistAIAlert symbol={stock.symbol} />
+                  <WatchlistAIAlert 
+                    symbol={stock.symbol} 
+                    price={livePrices[stock.symbol]?.price} 
+                    change={livePrices[stock.symbol]?.change} 
+                  />
 
                   <Link
                     to={`/dashboard/market?symbol=${stock.symbol}`}
