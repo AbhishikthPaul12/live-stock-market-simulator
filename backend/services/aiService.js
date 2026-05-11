@@ -29,7 +29,7 @@ async function callHF(prompt) {
 }
 
 export const askAI = async (message) => {
-  const prompt = `${message}\n\nCRITICAL: Provide a highly understandable, easy response in simple language. Maximum 80 words.`;
+  const prompt = `${message}\n\nCRITICAL: Provide a highly understandable, easy response in simple language. Maximum 150 words.`;
   return await callHF(prompt);
 };
 
