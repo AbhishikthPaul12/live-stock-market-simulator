@@ -15,7 +15,7 @@ export const buyStock = async (req, res) => {
       return res.status(400).json({ message: "Invalid symbol or quantity" });
     }
 
-    // Fetch REAL price securely from Finnhub
+    // Fetch current price from the simulation engine
     const { price } = await getStockPrice(symbol);
     console.log("API Response:", { price });
 
