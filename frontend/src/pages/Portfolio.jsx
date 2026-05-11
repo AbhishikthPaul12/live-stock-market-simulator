@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getPortfolio } from "../api/data.js";
+import { getPortfolio, getAllStocks } from "../api/data.js";
 import { sellStock } from "../api/trade.js";
 import { getProfile } from "../api/auth.js";
 import { getStockInsight, getPortfolioAnalysis } from "../api/ai.js";
@@ -88,10 +88,13 @@ function Portfolio() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [p, profile] = await Promise.all([getPortfolio(), getProfile()]);
+        const [p, profile, stocks] = await Promise.all([getPortfolio(), getProfile(), getAllStocks()]);
         setPortfolio(p);
         setRealizedProfit(profile.realizedProfit || 0);
-        await updatePricesLocal(p);
+        
+        const priceMap = {};
+        stocks.forEach(s => { priceMap[s.symbol] = s; });
+        setLivePrices(priceMap);
       } catch (err) {
         console.error("Error fetching portfolio:", err);
       } finally {
