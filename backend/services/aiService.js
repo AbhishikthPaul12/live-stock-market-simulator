@@ -61,17 +61,17 @@ export const analyzePortfolio = async (portfolioData) => {
       extractedSummary = summaryMatch[1];
     } else {
       // Last resort: meticulously strip all JSON-like structural characters and keys
-      extractedSummary = text
-        .replace(/\{|\}|\[|\]|```json|```|"/g, "") // Remove braces, brackets, quotes
-        .replace(/"?summary"?:|"?score"?:|"?diversification"?:|"?suggestions"?:|"?riskLevel"?:/gi, "") // Remove keys
-        .replace(/\d+,\s*/, "") // Remove the leading score + comma (e.g. "80, ")
-        .replace(/,\s*High|,\s*Medium|,\s*Low/i, "") // Remove trailing risk levels
-        .replace(/,\s*Standard.*/i, "") // Remove trailing diversification text
-        .replace(/\\"/g, '') // Clean escaped quotes
-        .replace(/,\s*,/g, ",") // Remove double commas
-        .replace(/^\s*,\s*/, "") // Remove leading commas
-        .trim()
-        .slice(0, 250); // Final truncation for safety
+      let cleanText = text;
+      cleanText = cleanText.replace(/\{|\}|\[|\]|```json|```|"/g, ""); // Remove braces, brackets, quotes
+      cleanText = cleanText.replace(/"?summary"?:|"?score"?:|"?diversification"?:|"?suggestions"?:|"?riskLevel"?:/gi, ""); // Remove keys
+      cleanText = cleanText.replace(/\d+,\s*/, ""); // Remove the leading score + comma (e.g. "80, ")
+      cleanText = cleanText.replace(/,\s*High|,\s*Medium|,\s*Low/i, ""); // Remove trailing risk levels
+      cleanText = cleanText.replace(/,\s*Standard.*/i, ""); // Remove trailing diversification text
+      cleanText = cleanText.replace(/\\"/g, ''); // Clean escaped quotes
+      cleanText = cleanText.replace(/,\s*,/g, ","); // Remove double commas
+      cleanText = cleanText.replace(/^\s*,\s*/, ""); // Remove leading commas
+      cleanText = cleanText.trim();
+      extractedSummary = cleanText.slice(0, 250); // Final truncation for safety
     }
 
     return {
@@ -123,15 +123,15 @@ export const generateStockInsight = async (stockData) => {
     }
     
     // Nuclear Scrubber: Meticulously strip ALL JSON-like artifacts
-    const cleanSummary = text
-      .replace(/```json|```|\{|\}|\[|\]/g, "") // Remove all brackets and blocks
-      .replace(/"(summary|riskLevel|sentiment|volatility|shortTermOutlook|industry|sector|summaryOfBenefits|benefits|outlook|analysis|risk)":/gi, "") // Remove common keys
-      .replace(/"\s*,\s*"/g, "\n") // Convert comma-separated quoted values into new lines
-      .replace(/\\"/g, '') // Unescape and strip escaped quotes completely
-      .replace(/^"|"$|",$/g, "") // Remove leading/trailing quotes and trailing commas
-      .replace(/\s+/g, " ") // Normalize spaces
-      .trim()
-      .slice(0, 350); // Hard limit buffer to keep it UI friendly
+    let cleanText = text;
+    cleanText = cleanText.replace(/```json|```|\{|\}|\[|\]/g, ""); // Remove all brackets and blocks
+    cleanText = cleanText.replace(/"(summary|riskLevel|sentiment|volatility|shortTermOutlook|industry|sector|summaryOfBenefits|benefits|outlook|analysis|risk)":/gi, ""); // Remove common keys
+    cleanText = cleanText.replace(/"\s*,\s*"/g, "\n"); // Convert comma-separated quoted values into new lines
+    cleanText = cleanText.replace(/\\"/g, ''); // Unescape and strip escaped quotes completely
+    cleanText = cleanText.replace(/^"|"$|",$/g, ""); // Remove leading/trailing quotes and trailing commas
+    cleanText = cleanText.replace(/\s+/g, " "); // Normalize spaces
+    cleanText = cleanText.trim();
+    const cleanSummary = cleanText.slice(0, 350); // Hard limit buffer to keep it UI friendly
     
     return {
       summary: cleanSummary || "Analysis completed based on current market data.",
