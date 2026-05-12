@@ -112,6 +112,7 @@ function Dashboard() {
   const [wallet, setWallet] = useState(0);
   const [portfolio, setPortfolio] = useState([]);
   const [realizedProfit, setRealizedProfit] = useState(0);
+  const [realizedProfitToday, setRealizedProfitToday] = useState(0);
   const [livePrices, setLivePrices] = useState({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -130,6 +131,7 @@ function Dashboard() {
         setWallet(w.walletBalance);
         setPortfolio(p);
         setRealizedProfit(profile.realizedProfit || 0);
+        setRealizedProfitToday(profile.realizedProfitToday || 0);
         
         // Calculate Gainers/Losers
         const sorted = [...stocks].sort((a, b) => b.change - a.change);
@@ -220,7 +222,7 @@ function Dashboard() {
     if (!s) return acc;
     const prevClose = s.price / (1 + (s.change || 0) / 100);
     return acc + (s.price - prevClose) * item.quantity;
-  }, 0);
+  }, 0) + realizedProfitToday;
 
   const dailyChangePercent = portfolioValue > 0 ? (dailyChange / (portfolioValue - dailyChange)) * 100 : 0;
 
@@ -432,12 +434,38 @@ function Dashboard() {
                 <p className="text-indigo-200 font-medium leading-relaxed">
                   Global markets are showing high volatility today. Keep an eye on your watchlist.
                 </p>
+
+                {/* Quick Stats Widget */}
+                <div className="mt-8 grid grid-cols-2 gap-4">
+                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:bg-white/20 transition-all cursor-default">
+                    <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-1">NIFTY 50</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-lg font-black text-white">22,456.20</span>
+                      <span className="text-[10px] font-bold text-emerald-400">+0.45%</span>
+                    </div>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:bg-white/20 transition-all cursor-default">
+                    <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-1">SENSEX</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-lg font-black text-white">73,903.15</span>
+                      <span className="text-[10px] font-bold text-emerald-400">+0.38%</span>
+                    </div>
+                  </div>
+                  <div className="col-span-2 bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
+                    <div className="flex justify-between items-center mb-2">
+                       <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Market Volatility</p>
+                       <span className="text-[10px] font-black text-white uppercase tracking-widest bg-rose-500/50 px-2 py-0.5 rounded-full">High</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-indigo-950 rounded-full overflow-hidden">
+                       <div className="h-full bg-gradient-to-r from-emerald-500 via-amber-500 to-rose-500 w-[72%]"></div>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div className="mt-10">
                 <button onClick={() => navigate("/dashboard/market")} className="w-full bg-white text-indigo-900 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl hover:bg-indigo-50 transition-all active:scale-95">
                   Execute Trade
                 </button>
-                <p className="text-center text-indigo-400 text-[10px] font-bold mt-4 uppercase tracking-widest">Trusted by 10k+ Traders</p>
               </div>
             </div>
           </div>

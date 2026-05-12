@@ -1,4 +1,5 @@
 import User from "../models/User.js";
+import Transaction from "../models/Transaction.js";
 import jwt from "jsonwebtoken";
 
 // Generate JWT
@@ -70,7 +71,26 @@ export const loginUser = async (req, res) => {
 // PROFILE
 export const getUserProfile = async (req, res) => {
   if (req.user) {
-    res.json(req.user);
+    try {
+      // Calculate realized profit today
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const transactionsToday = await Transaction.find({
+        user: req.user._id,
+        type: "SELL",
+        createdAt: { $gte: startOfDay }
+      });
+
+      const realizedProfitToday = transactionsToday.reduce((acc, t) => acc + (t.profit || 0), 0);
+
+      const userObj = req.user.toObject();
+      userObj.realizedProfitToday = Number(realizedProfitToday.toFixed(6));
+
+      res.json(userObj);
+    } catch (error) {
+      res.status(500).json({ message: "Error calculating daily stats" });
+    }
   } else {
     res.status(404).json({ message: "User not found" });
   }
