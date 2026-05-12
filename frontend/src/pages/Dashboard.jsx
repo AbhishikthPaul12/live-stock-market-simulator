@@ -166,8 +166,12 @@ function Dashboard() {
     setLivePrices((prev) => {
       const next = { ...prev };
       for (const item of portfolio) {
-        if (socketPrices[item.symbol]) {
-          next[item.symbol] = socketPrices[item.symbol];
+        if (!item.symbol) continue;
+        const sym = item.symbol.toUpperCase();
+        // Smart lookup to match socket updates even if suffixes differ
+        const update = socketPrices[sym] || socketPrices[`${sym}.NS`] || socketPrices[sym.split('.')[0]];
+        if (update) {
+          next[item.symbol] = update;
         }
       }
       return next;
@@ -207,19 +211,29 @@ function Dashboard() {
     }
   }
 
+  // Robust lookup to handle mismatches between DB stored symbol and live feed symbol keys
+  const getStockInfo = (sym) => {
+    if (!sym) return null;
+    const upper = sym.toUpperCase();
+    return livePrices[upper] || livePrices[`${upper}.NS`] || livePrices[upper.split('.')[0]] || null;
+  };
+
   const portfolioValue = portfolio.reduce((acc, item) => {
-    const current = livePrices[item.symbol]?.price || item.buyPrice;
-    return acc + current * item.quantity;
+    const s = getStockInfo(item.symbol);
+    const current = s?.price || item.buyPrice || 0;
+    return acc + (current * item.quantity);
   }, 0);
 
   const profit = portfolio.reduce((acc, item) => {
-    const current = livePrices[item.symbol]?.price || item.buyPrice;
-    return acc + (current - item.buyPrice) * item.quantity;
+    const s = getStockInfo(item.symbol);
+    const current = s?.price || item.buyPrice || 0;
+    const buyPrice = item.buyPrice || 0;
+    return acc + (current - buyPrice) * item.quantity;
   }, 0);
 
   const dailyChange = portfolio.reduce((acc, item) => {
-    const s = livePrices[item.symbol];
-    if (!s) return acc;
+    const s = getStockInfo(item.symbol);
+    if (!s || !s.price) return acc;
     const prevClose = s.price / (1 + (s.change || 0) / 100);
     return acc + (s.price - prevClose) * item.quantity;
   }, 0) + realizedProfitToday;
