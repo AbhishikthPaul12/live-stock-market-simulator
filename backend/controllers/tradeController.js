@@ -139,7 +139,8 @@ export const sellStock = async (req, res) => {
       type: "SELL",
       symbol,
       quantity: Number(quantity),
-      price: Number(price)
+      price: Number(price),
+      profit: Number(profit.toFixed(6))
     });
 
     console.log(`[SELL] Transaction recorded in DB for user ${userId}`);
