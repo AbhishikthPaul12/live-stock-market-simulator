@@ -93,16 +93,22 @@ export const analyzePortfolio = async (portfolioData) => {
 };
 
 export const generateStockInsight = async (stockData) => {
-  const prompt = `Provide a detailed financial insight for ${stockData.name} (${stockData.symbol}).
-  Return the response in a structured JSON format with fields: summary, riskLevel, sentiment, volatility, shortTermOutlook.
+  const prompt = `Generate a short financial summary for ${stockData.name} (${stockData.symbol}).
+  The stock is trading at ₹${stockData.price} with a movement of ${stockData.change}%.
   
-  CRITICAL REQUIREMENTS:
-  - The analysis MUST be about ${stockData.name}.
-  - Return ONLY ONE JSON object. Do NOT repeat yourself.
-  - Do NOT wrap the JSON in markdown code blocks.
-  - Provide 3-4 bullet points of educational insight in the 'summary' field.
-  - Keep each insight field very concise (under 100 words total across the whole summary).
-  - Every field must be a STRING.`;
+  IMPORTANT INSTRUCTIONS:
+  1. SIMULATE 1 sentence of recent "Market News" (like earning report, expansion deal, etc) that drives this price.
+  2. Return ONLY ONE RAW JSON OBJECT. No words before or after it.
+  3. Do not use double quotes (") inside the summary text fields.
+  
+  EXACT OUTPUT FORMAT:
+  {
+    "summary": "Place the simulated news driver and short analysis here.",
+    "riskLevel": "Low/Medium/High",
+    "sentiment": "Bullish/Bearish/Neutral",
+    "volatility": "Low/Medium/High",
+    "shortTermOutlook": "Brief outlook statement"
+  }`;
   
   try {
     const text = await callHF(prompt);

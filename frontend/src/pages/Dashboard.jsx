@@ -8,14 +8,6 @@ import LoadingSkeleton from "../components/ai/LoadingSkeleton.jsx";
 import RiskBadge from "../components/ai/RiskBadge.jsx";
 import MiniSparkline from "../components/MiniSparkline.jsx";
 
-// Mock news headlines for AI summarization
-const MOCK_HEADLINES = [
-  "Indian markets rally as RBI holds interest rates steady",
-  "Adani Group stocks surge following infrastructure deal announcement",
-  "Tech sector faces headwinds amid global chip shortage concerns",
-  "FII inflows reach record high as rupee stabilizes against dollar",
-  "SEBI introduces new regulations for F&O trading to curb speculation",
-];
 
 // Sentiment color config
 function SentimentPill({ sentiment }) {
@@ -138,9 +130,12 @@ function Dashboard() {
         setTopGainers(sorted.slice(0, 4));
         setTopLosers([...sorted].reverse().slice(0, 4));
 
-        const priceMap = {};
-        stocks.forEach(s => { priceMap[s.symbol] = s; });
-        setLivePrices(priceMap);
+        // Seed livePrices state immediately so Day G/L calculates without waiting for socket ticks
+        const initialPrices = {};
+        stocks.forEach((s) => {
+          initialPrices[s.symbol] = { price: s.price, change: s.change };
+        });
+        setLivePrices(initialPrices);
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
       } finally {
@@ -166,12 +161,8 @@ function Dashboard() {
     setLivePrices((prev) => {
       const next = { ...prev };
       for (const item of portfolio) {
-        if (!item.symbol) continue;
-        const sym = item.symbol.toUpperCase();
-        // Smart lookup to match socket updates even if suffixes differ
-        const update = socketPrices[sym] || socketPrices[`${sym}.NS`] || socketPrices[sym.split('.')[0]];
-        if (update) {
-          next[item.symbol] = update;
+        if (socketPrices[item.symbol]) {
+          next[item.symbol] = socketPrices[item.symbol];
         }
       }
       return next;
@@ -201,39 +192,39 @@ function Dashboard() {
     if (newsLoading) return;
     setNewsLoading(true);
     setNewsLoaded(true);
+
+    // Generate real-time dynamic headlines derived from actual simulator performance data
+    const dynamicHeadlines = [
+      `Markets track volatility as ${topGainers[0]?.symbol || "leaders"} leads the index with positive momentum today.`,
+      `${topLosers[0]?.symbol || "Heavyweights"} faces correction pressure as sellers dominate trading volume.`,
+      `${topGainers[1]?.symbol || "Bluechips"} surges by ${Math.abs(topGainers[1]?.change || 0).toFixed(2)}% attracting institutional buyer interest.`,
+      `${topLosers[1]?.symbol || "Market sectors"} remains soft dropping ${(topLosers[1]?.change || 0).toFixed(2)}% following intraday profit booking.`,
+      "Retail activity spikes across major banking and information technology counters on the NSE."
+    ];
+
     try {
-      const data = await getNewsSummary(MOCK_HEADLINES);
+      const data = await getNewsSummary(dynamicHeadlines);
       setNewsData(data.summaries || []);
     } catch {
-      setNewsData(MOCK_HEADLINES.map((h) => ({ headline: h, summary: "", sentiment: "neutral" })));
+      setNewsData(dynamicHeadlines.map((h) => ({ headline: h, summary: "Real-time analysis temporarily offline.", sentiment: "neutral" })));
     } finally {
       setNewsLoading(false);
     }
   }
 
-  // Robust lookup to handle mismatches between DB stored symbol and live feed symbol keys
-  const getStockInfo = (sym) => {
-    if (!sym) return null;
-    const upper = sym.toUpperCase();
-    return livePrices[upper] || livePrices[`${upper}.NS`] || livePrices[upper.split('.')[0]] || null;
-  };
-
   const portfolioValue = portfolio.reduce((acc, item) => {
-    const s = getStockInfo(item.symbol);
-    const current = s?.price || item.buyPrice || 0;
-    return acc + (current * item.quantity);
+    const current = livePrices[item.symbol]?.price || item.buyPrice;
+    return acc + current * item.quantity;
   }, 0);
 
   const profit = portfolio.reduce((acc, item) => {
-    const s = getStockInfo(item.symbol);
-    const current = s?.price || item.buyPrice || 0;
-    const buyPrice = item.buyPrice || 0;
-    return acc + (current - buyPrice) * item.quantity;
+    const current = livePrices[item.symbol]?.price || item.buyPrice;
+    return acc + (current - item.buyPrice) * item.quantity;
   }, 0);
 
   const dailyChange = portfolio.reduce((acc, item) => {
-    const s = getStockInfo(item.symbol);
-    if (!s || !s.price) return acc;
+    const s = livePrices[item.symbol];
+    if (!s) return acc;
     const prevClose = s.price / (1 + (s.change || 0) / 100);
     return acc + (s.price - prevClose) * item.quantity;
   }, 0) + realizedProfitToday;
@@ -607,7 +598,6 @@ function Dashboard() {
                       {item.summary && <p className="text-xs text-slate-500 font-medium leading-relaxed">{item.summary}</p>}
                       <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-50">
                         <SentimentPill sentiment={item.sentiment || "neutral"} />
-                        <span className="text-[10px] text-slate-300 font-medium">AI Summary</span>
                       </div>
                     </div>
                   ))}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getPortfolio, getAllStocks } from "../api/data.js";
+import { getPortfolio } from "../api/data.js";
 import { sellStock } from "../api/trade.js";
 import { getProfile } from "../api/auth.js";
 import { getStockInsight, getPortfolioAnalysis } from "../api/ai.js";
@@ -88,13 +88,10 @@ function Portfolio() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [p, profile, stocks] = await Promise.all([getPortfolio(), getProfile(), getAllStocks()]);
+        const [p, profile] = await Promise.all([getPortfolio(), getProfile()]);
         setPortfolio(p);
         setRealizedProfit(profile.realizedProfit || 0);
-        
-        const priceMap = {};
-        stocks.forEach(s => { priceMap[s.symbol] = s; });
-        setLivePrices(priceMap);
+        await updatePricesLocal(p);
       } catch (err) {
         console.error("Error fetching portfolio:", err);
       } finally {
@@ -115,11 +112,8 @@ function Portfolio() {
     setLivePrices((prev) => {
       const next = { ...prev };
       for (const item of portfolio) {
-        if (!item.symbol) continue;
-        const sym = item.symbol.toUpperCase();
-        const update = socketPrices[sym] || socketPrices[`${sym}.NS`] || socketPrices[sym.split('.')[0]];
-        if (update) {
-          next[item.symbol] = update;
+        if (socketPrices[item.symbol]) {
+          next[item.symbol] = socketPrices[item.symbol];
         }
       }
       return next;
@@ -151,18 +145,9 @@ function Portfolio() {
     }
   }
 
-  // Robust lookup to handle mismatches between DB stored symbol and live feed symbol keys
-  const getStockInfo = (sym) => {
-    if (!sym) return null;
-    const upper = sym.toUpperCase();
-    return livePrices[upper] || livePrices[`${upper}.NS`] || livePrices[upper.split('.')[0]] || null;
-  };
-
   const unrealizedProfit = portfolio.reduce((acc, item) => {
-    const s = getStockInfo(item.symbol);
-    const current = s?.price || item.buyPrice || 0;
-    const buyPrice = item.buyPrice || 0;
-    return acc + (current - buyPrice) * item.quantity;
+    const current = livePrices[item.symbol]?.price || item.buyPrice;
+    return acc + (current - item.buyPrice) * item.quantity;
   }, 0);
 
   const totalProfit = realizedProfit + unrealizedProfit;
@@ -334,21 +319,19 @@ function Portfolio() {
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {portfolio.map((item, i) => {
-                    const s = getStockInfo(item.symbol);
-                    const current = s?.price || item.buyPrice || 0;
-                    const buyPrice = item.buyPrice || 0;
-                    const profit = (current - buyPrice) * item.quantity;
-                    const profitPercent = buyPrice > 0 ? ((current - buyPrice) / buyPrice) * 100 : 0;
+                    const current = livePrices[item.symbol]?.price || item.buyPrice;
+                    const profit = (current - item.buyPrice) * item.quantity;
+                    const profitPercent = ((current - item.buyPrice) / item.buyPrice) * 100;
 
                     return (
                       <tr key={i} className="hover:bg-slate-50/50 transition-all group">
                         <td className="px-10 py-7">
                           <div className="flex items-center gap-4">
                             <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center font-black overflow-hidden border border-slate-100 shadow-sm group-hover:scale-105 transition-transform">
-                              {s?.logo ? (
-                                <img src={s.logo} alt={item.symbol} className="w-full h-full object-contain p-2" />
+                              {livePrices[item.symbol]?.logo ? (
+                                <img src={livePrices[item.symbol].logo} alt={item.symbol} className="w-full h-full object-contain p-2" />
                               ) : (
-                                <span className="text-slate-400 text-xl">{item.symbol ? item.symbol[0] : '?'}</span>
+                                <span className="text-slate-400 text-xl">{item.symbol[0]}</span>
                               )}
                             </div>
                             <div>
