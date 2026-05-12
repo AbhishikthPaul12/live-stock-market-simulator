@@ -212,26 +212,143 @@ function Dashboard() {
     }
   }
 
-  const portfolioValue = portfolio.reduce((acc, item) => {
-    const current = livePrices[item.symbol]?.price || item.buyPrice;
-    return acc + current * item.quantity;
-  }, 0);
+  let portfolioValue = 0;
+  let profit = 0;
+  let dailyChange = 0;
 
-  const profit = portfolio.reduce((acc, item) => {
-    const current = livePrices[item.symbol]?.price || item.buyPrice;
-    return acc + (current - item.buyPrice) * item.quantity;
-  }, 0);
+  for (let i = 0; i < portfolio.length; i++) {
+    const item = portfolio[i];
+    let currentPrice = item.buyPrice;
+    
+    // Check if we have live price data for this stock
+    if (livePrices[item.symbol] && livePrices[item.symbol].price) {
+        currentPrice = livePrices[item.symbol].price;
+    }
+    
+    // Calculate total portfolio value
+    portfolioValue = portfolioValue + (currentPrice * item.quantity);
+    
+    // Calculate current profit vs buy price
+    profit = profit + ((currentPrice - item.buyPrice) * item.quantity);
 
-  const dailyChange = portfolio.reduce((acc, item) => {
-    const s = livePrices[item.symbol];
-    if (!s) return acc;
-    const prevClose = s.price / (1 + (s.change || 0) / 100);
-    return acc + (s.price - prevClose) * item.quantity;
-  }, 0) + realizedProfitToday;
+    // Calculate daily change based on previous close
+    const stockData = livePrices[item.symbol];
+    if (stockData) {
+        let changePercent = 0;
+        if (stockData.change) {
+            changePercent = stockData.change;
+        }
+        const prevClose = stockData.price / (1 + (changePercent / 100));
+        dailyChange = dailyChange + ((stockData.price - prevClose) * item.quantity);
+    }
+  }
 
-  const dailyChangePercent = portfolioValue > 0 ? (dailyChange / (portfolioValue - dailyChange)) * 100 : 0;
+  // Add the profit realized today to the daily change
+  dailyChange = dailyChange + realizedProfitToday;
+
+  // Calculate percentage of daily change
+  let dailyChangePercent = 0;
+  if (portfolioValue > 0) {
+      dailyChangePercent = (dailyChange / (portfolioValue - dailyChange)) * 100;
+  }
 
   const totalProfit = realizedProfit + profit;
+
+  // Helper function to render AI Content using basic if/else statements
+  const renderAiContent = () => {
+    if (!aiAnalyzed) {
+      return (
+        <div className="flex flex-col md:flex-row gap-10">
+          <div className="flex-1">
+            <p className="text-slate-500 font-medium leading-relaxed text-lg mb-8">
+              Your investment strategy is currently yielding a net performance of{" "}
+              <span className={`font-black ${profit >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                {profit >= 0 ? "₹" + profit.toFixed(2) + " Surplus" : "₹" + Math.abs(profit).toFixed(2) + " Deficit"}
+              </span>{" "}
+              relative to your entry prices.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <div className="bg-slate-100 px-4 py-2 rounded-xl text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                Click "Analyze with AI" for insights
+              </div>
+            </div>
+          </div>
+          <div className="w-full md:w-64 h-64 bg-slate-50 rounded-3xl border border-slate-200 flex flex-col items-center justify-center group-hover:border-indigo-200 transition-colors">
+            <div className="w-20 h-20 bg-white rounded-2xl shadow-lg border border-slate-100 flex items-center justify-center mb-4 transform group-hover:rotate-6 transition-transform">
+              <svg className="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            </div>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Visual Charts</span>
+            <span onClick={() => navigate("/dashboard/analytics")} className="text-xs font-bold text-indigo-600 mt-1 cursor-pointer hover:underline">
+              Explore Details
+            </span>
+          </div>
+        </div>
+      );
+    } else if (aiLoading) {
+      return (
+        <div className="space-y-5">
+          <LoadingSkeleton lines={3} />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="h-16 bg-slate-100 rounded-2xl animate-pulse" />
+            <div className="h-16 bg-slate-100 rounded-2xl animate-pulse" />
+          </div>
+          <LoadingSkeleton lines={2} />
+        </div>
+      );
+    } else if (aiAnalysis) {
+      return (
+        <div className="space-y-5">
+          {/* Score + Risk Row */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 text-center">
+              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">AI Score</p>
+              <p className="text-4xl font-black text-indigo-700">{aiAnalysis.score}</p>
+              <p className="text-[10px] text-indigo-500 font-medium mt-1">/ 100</p>
+            </div>
+            <div className="flex items-center">
+              <RiskBadge level={aiAnalysis.riskLevel} score={Math.round((aiAnalysis.score / 100) * 10)} reasoning={aiAnalysis.sectorExposure} />
+            </div>
+          </div>
+
+          {/* Summary */}
+          <p className="text-slate-600 font-medium leading-relaxed text-sm">{aiAnalysis.summary}</p>
+
+          {/* Diversification */}
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Diversification</p>
+            <p className="text-sm text-slate-700 font-medium">{aiAnalysis.diversification}</p>
+          </div>
+
+          {/* Suggestions */}
+          {aiAnalysis.suggestions?.length > 0 && (
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">AI Suggestions</p>
+              <ul className="space-y-2">
+                {aiAnalysis.suggestions.map((s, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
+                    <span className="text-indigo-500 mt-0.5 font-black shrink-0">→</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <button
+            onClick={() => { setAiAnalyzed(false); setAiAnalysis(null); }}
+            className="text-xs text-indigo-600 font-bold hover:underline"
+          >
+            ← Reset analysis
+          </button>
+        </div>
+      );
+    } else {
+      return (
+        <p className="text-rose-500 text-sm font-medium">AI analysis failed. Please try again.</p>
+      );
+    }
+  };
 
   if (loading) {
     return (
@@ -343,90 +460,7 @@ function Dashboard() {
                 )}
               </div>
 
-              {!aiAnalyzed ? (
-                <div className="flex flex-col md:flex-row gap-10">
-                  <div className="flex-1">
-                    <p className="text-slate-500 font-medium leading-relaxed text-lg mb-8">
-                      Your investment strategy is currently yielding a net performance of{" "}
-                      <span className={`font-black ${profit >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                        {profit >= 0 ? "₹" + profit.toFixed(2) + " Surplus" : "₹" + Math.abs(profit).toFixed(2) + " Deficit"}
-                      </span>{" "}
-                      relative to your entry prices.
-                    </p>
-                    <div className="flex flex-wrap gap-3">
-                      <div className="bg-slate-100 px-4 py-2 rounded-xl text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
-                        Click "Analyze with AI" for insights
-                      </div>
-                    </div>
-                  </div>
-                  <div className="w-full md:w-64 h-64 bg-slate-50 rounded-3xl border border-slate-200 flex flex-col items-center justify-center group-hover:border-indigo-200 transition-colors">
-                    <div className="w-20 h-20 bg-white rounded-2xl shadow-lg border border-slate-100 flex items-center justify-center mb-4 transform group-hover:rotate-6 transition-transform">
-                      <svg className="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                    </div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Visual Charts</span>
-                    <span onClick={() => navigate("/dashboard/analytics")} className="text-xs font-bold text-indigo-600 mt-1 cursor-pointer hover:underline">
-                      Explore Details
-                    </span>
-                  </div>
-                </div>
-              ) : aiLoading ? (
-                <div className="space-y-5">
-                  <LoadingSkeleton lines={3} />
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="h-16 bg-slate-100 rounded-2xl animate-pulse" />
-                    <div className="h-16 bg-slate-100 rounded-2xl animate-pulse" />
-                  </div>
-                  <LoadingSkeleton lines={2} />
-                </div>
-              ) : aiAnalysis ? (
-                <div className="space-y-5">
-                  {/* Score + Risk Row */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 text-center">
-                      <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">AI Score</p>
-                      <p className="text-4xl font-black text-indigo-700">{aiAnalysis.score}</p>
-                      <p className="text-[10px] text-indigo-500 font-medium mt-1">/ 100</p>
-                    </div>
-                    <div className="flex items-center">
-                      <RiskBadge level={aiAnalysis.riskLevel} score={Math.round((aiAnalysis.score / 100) * 10)} reasoning={aiAnalysis.sectorExposure} />
-                    </div>
-                  </div>
-
-                  {/* Summary */}
-                  <p className="text-slate-600 font-medium leading-relaxed text-sm">{aiAnalysis.summary}</p>
-
-                  {/* Diversification */}
-                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Diversification</p>
-                    <p className="text-sm text-slate-700 font-medium">{aiAnalysis.diversification}</p>
-                  </div>
-
-                  {/* Suggestions */}
-                  {aiAnalysis.suggestions?.length > 0 && (
-                    <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">AI Suggestions</p>
-                      <ul className="space-y-2">
-                        {aiAnalysis.suggestions.map((s, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
-                            <span className="text-indigo-500 mt-0.5 font-black shrink-0">→</span>
-                            {s}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={() => { setAiAnalyzed(false); setAiAnalysis(null); }}
-                    className="text-xs text-indigo-600 font-bold hover:underline"
-                  >
-                    ← Reset analysis
-                  </button>
-                </div>
-              ) : (
-                <p className="text-rose-500 text-sm font-medium">AI analysis failed. Please try again.</p>
-              )}
+              {renderAiContent()}
             </div>
           </div>
 

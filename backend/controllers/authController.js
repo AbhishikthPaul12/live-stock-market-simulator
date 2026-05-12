@@ -82,7 +82,14 @@ export const getUserProfile = async (req, res) => {
         createdAt: { $gte: startOfDay }
       });
 
-      const realizedProfitToday = transactionsToday.reduce((acc, t) => acc + (t.profit || 0), 0);
+      let realizedProfitToday = 0;
+      for (let i = 0; i < transactionsToday.length; i++) {
+          let profit = 0;
+          if (transactionsToday[i].profit) {
+              profit = transactionsToday[i].profit;
+          }
+          realizedProfitToday = realizedProfitToday + profit;
+      }
 
       const userObj = req.user.toObject();
       userObj.realizedProfitToday = Number(realizedProfitToday.toFixed(6));
