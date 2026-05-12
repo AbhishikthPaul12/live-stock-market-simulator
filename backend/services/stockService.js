@@ -101,11 +101,9 @@ const stockCache = {};
 const sessionHistory = {}; // Stores last 60 minutes of price points
 
 INITIAL_STOCKS.forEach(stock => {
-  const startPrice = generateDeterministicPrice(stock.symbol);
   stockCache[stock.symbol] = {
     ...stock,
-    price: startPrice,
-    openPrice: startPrice,
+    price: generateDeterministicPrice(stock.symbol),
     change: 0
   };
   sessionHistory[stock.symbol] = [];
@@ -132,8 +130,7 @@ setInterval(async () => {
     const volatility = currentPrice > 2000 ? 0.0003 : 0.0006;
     const drift = (Math.random() - 0.498) * volatility; // slight upward bias
     const newPrice = Number((currentPrice * (1 + drift)).toFixed(2));
-    const openPrice = stockCache[sym].openPrice || currentPrice;
-    const priceChange = Number(((newPrice - openPrice) / openPrice * 100).toFixed(2));
+    const priceChange = Number(((newPrice - currentPrice) / currentPrice * 100).toFixed(2));
 
     stockCache[sym].price = newPrice;
     stockCache[sym].change = priceChange;
@@ -189,39 +186,18 @@ setInterval(async () => {
 
 export const getAllStocks = async () => Object.values(stockCache);
 
-// Helper to resolve aliases (e.g., user types "INFY", we map it to "INFY.NS" if it exists)
-export const getCanonicalSymbol = (symbol) => {
-  if (!symbol) return "";
-  const sym = symbol.toUpperCase();
-  if (stockCache[sym]) return sym;
-  
-  // Try common derivations
-  if (stockCache[`${sym}.NS`]) return `${sym}.NS`;
-  if (sym.endsWith(".NS") && stockCache[sym.slice(0, -3)]) return sym.slice(0, -3);
-  
-  // Deep search prefix matches if not found (optional safety)
-  const match = Object.keys(stockCache).find(k => k.split('.')[0] === sym.split('.')[0]);
-  if (match) return match;
-
-  return sym;
-};
-
 export const getStockPrice = async (symbol) => {
-  const sym = getCanonicalSymbol(symbol);
+  const sym = symbol.toUpperCase();
   if (stockCache[sym]) return { price: stockCache[sym].price, change: stockCache[sym].change };
-  
   // Fallback: generate a deterministic price for unknown symbols
-  const fallbackSym = symbol.toUpperCase();
-  return { price: generateDeterministicPrice(fallbackSym), change: 0.15 };
+  return { price: generateDeterministicPrice(sym), change: 0.15 };
 };
 
 export const getStockData = async (symbol) => {
-  const sym = getCanonicalSymbol(symbol);
+  const sym = symbol.toUpperCase();
   if (stockCache[sym]) return stockCache[sym];
-  
-  // Fallback for unknown symbols - keep original symbol case-normed
-  const origSym = symbol.toUpperCase();
-  return { symbol: origSym, name: `${origSym} India`, price: generateDeterministicPrice(origSym), change: 0.45, logo: "" };
+  // Fallback for unknown symbols
+  return { symbol: sym, name: `${sym} India`, price: generateDeterministicPrice(sym), change: 0.45, logo: "" };
 };
 
 const generateMockHistory = async (symbol, timeframe = '1M') => {

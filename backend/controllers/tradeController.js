@@ -1,13 +1,12 @@
 import Portfolio from "../models/Portfolio.js";
 import Transaction from "../models/Transaction.js";
 import User from "../models/User.js";
-import { getStockPrice, getCanonicalSymbol } from "../services/stockService.js";
+import { getStockPrice } from "../services/stockService.js";
 
 // BUY STOCK
 export const buyStock = async (req, res) => {
   try {
-    let { symbol, quantity } = req.body;
-    symbol = getCanonicalSymbol(symbol);
+    const { symbol, quantity } = req.body;
     const userId = req.user._id;
 
     console.log(`[BUY] Attempting purchase for user ${userId}: ${quantity} shares of ${symbol}`);
@@ -84,8 +83,7 @@ export const buyStock = async (req, res) => {
 // SELL STOCK
 export const sellStock = async (req, res) => {
   try {
-    let { symbol, quantity } = req.body;
-    symbol = getCanonicalSymbol(symbol);
+    const { symbol, quantity } = req.body;
     const userId = req.user._id;
 
     console.log(`[SELL] Attempting sale for user ${userId}: ${quantity} shares of ${symbol}`);
