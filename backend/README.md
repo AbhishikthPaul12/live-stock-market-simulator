@@ -5,15 +5,27 @@ The robust server-side engine powering real-time Indian stock market simulation 
 ## Core Services
 
 ### Real-Time Price Engine
-
 Located in `services/stockService.js`, this engine eliminates the need for expensive third-party APIs by simulating a deterministic random-walk model for Nifty 50 stocks. It broadcasts live updates every second via Socket.io.
 
 ### AI Financial Layer
-
 Integration with **Hugging Face (Llama-3.2)** provides:
 - Automated portfolio risk analysis.
 - Real-time sentiment scrubbing.
 - Intelligent educational content generation.
+
+## 📦 Key Dependencies
+
+| Package | Purpose |
+| :--- | :--- |
+| **express** | Core web framework (v5) |
+| **mongoose** | MongoDB object modeling and schema validation |
+| **socket.io** | Real-time WebSocket server for live price broadcasts |
+| **jsonwebtoken** | Secure stateless authentication via JWT |
+| **bcryptjs** | Industrial-grade password hashing |
+| **helmet** | Production-ready security headers |
+| **cors** | Configurable cross-origin resource sharing |
+| **@huggingface/inference** | Direct integration with Llama-3.2 AI models |
+| **dotenv** | Environment variable management |
 
 ### Security & Scalability
 

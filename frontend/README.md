@@ -16,12 +16,25 @@ A premium, glassmorphic UI built with React.js, designed to provide an instituti
 - **Toast System**: Custom-built notification system for all app interactions.
 - **Demo Mode**: Instant access with pre-seeded data for rapid evaluation.
 
+## 📦 Key Libraries
+
+| Package | Purpose |
+| :--- | :--- |
+| **react** | Core UI library (v19) |
+| **react-router-dom** | Declarative routing for Single Page Application (SPA) |
+| **tailwindcss** | Utility-first CSS framework for modern styling |
+| **framer-motion** | Production-ready animations and gesture library |
+| **recharts** | Composable charting library for financial data visualization |
+| **socket.io-client** | Real-time WebSocket client for live data sync |
+| **axios** | Promise-based HTTP client for API communication |
+| **react-markdown** | Component to render AI-generated markdown safely |
+| **lucide-react** | Beautiful and consistent icon set |
+
 ## Technology Stack
 
 - **Framework**: React.js (Vite)
 - **Styling**: Tailwind CSS & Framer Motion
 - **Charting**: Recharts
-- **Icons**: Lucide React
 - **State Management**: Context API (Auth, Socket, Toasts)
 
 ## Installation
