@@ -13,7 +13,7 @@ Integration with **Hugging Face (Llama-3.2)** provides:
 - Real-time sentiment scrubbing.
 - Intelligent educational content generation.
 
-## 📦 Key Dependencies
+## Key Dependencies
 
 | Package | Purpose |
 | :--- | :--- |
