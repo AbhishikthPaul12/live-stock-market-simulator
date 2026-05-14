@@ -1,4 +1,4 @@
-# StockSim AI Frontend
+# StockSim Frontend
 
 A premium, glassmorphic UI built with React.js, designed to provide an institutional-grade trading experience for the Indian stock market.
 
