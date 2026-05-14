@@ -8,18 +8,7 @@ const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
 const HF_MODEL = "meta-llama/Llama-3.2-1B-Instruct";
 
-const SYSTEM_PROMPT = `You are an AI Trading Copilot specializing in the Indian Stock Market (NSE and BSE).
-Your role is to:
-- explain stocks simply
-- analyze portfolios
-- explain risks
-- summarize trends
-- educate beginners
-- provide simulated trading insights using Indian context (e.g., SEBI, Nifty 50, Sensex, INR)
-
-Never provide real financial advice.
-Keep responses concise, educational, professional, and beginner-friendly.
-Ensure your responses are fully finished and do not cut off.`;
+const SYSTEM_PROMPT = "You are an AI-powered financial expert specializing in the Indian Stock Market (NSE and BSE). Your goal is to provide educational guidance inside a stock market simulator focused on Indian equities. Explain concepts using Indian context (e.g., SEBI, Nifty 50, Sensex, INR), provide educational guidance, and summarize stock information accurately. IMPORTANT: Always complete your thoughts and ensure your responses are fully finished.";
 
 /**
  * Call Gemini API (Primary)
@@ -96,7 +85,7 @@ async function askAIWithFallback(prompt) {
 }
 
 export const askAI = async (message) => {
-  return await askAIWithFallback(message);
+  return await callHF(message);
 };
 
 export const analyzePortfolio = async (portfolioData) => {
@@ -104,6 +93,7 @@ export const analyzePortfolio = async (portfolioData) => {
   Return exactly ONE structured JSON object with fields: score (0-100), summary (text), diversification (text), suggestions (array of strings), riskLevel (string).
   
   CRITICAL: 
+  - Limit the total length of the 'summary' text to under 80 words.
   - Do NOT include markdown code blocks. 
   - Do NOT include any code, explanations, or console logs.
   - Return ONLY the JSON object.`;
@@ -118,14 +108,15 @@ export const analyzePortfolio = async (portfolioData) => {
     if (summaryMatch) {
       extractedSummary = summaryMatch[1];
     } else {
+      // Last resort: meticulously strip all JSON-like structural characters and keys
       extractedSummary = text
-        .replace(/\{|\}|\[|\]/g, "")
-        .replace(/"?summary"?:|"?score"?:|"?diversification"?:|"?suggestions"?:|"?riskLevel"?:/gi, "")
-        .replace(/\d+,\s*/, "")
-        .replace(/,\s*High|,\s*Medium|,\s*Low/i, "")
-        .replace(/,\s*Standard.*/i, "")
-        .replace(/,\s*,/g, ",")
-        .replace(/^\s*,/, "")
+        .replace(/\{|\}|\[|\]|```json|```|"/g, "") // Remove braces, brackets, quotes
+        .replace(/"?summary"?:|"?score"?:|"?diversification"?:|"?suggestions"?:|"?riskLevel"?:/gi, "") // Remove keys
+        .replace(/\d+,\s*/, "") // Remove the leading score + comma (e.g. "80, ")
+        .replace(/,\s*High|,\s*Medium|,\s*Low/i, "") // Remove trailing risk levels
+        .replace(/,\s*Standard.*/i, "") // Remove trailing diversification text
+        .replace(/,\s*,/g, ",") // Remove double commas
+        .replace(/^\s*,/, "") // Remove leading commas
         .trim();
     }
 
@@ -148,28 +139,43 @@ export const analyzePortfolio = async (portfolioData) => {
 };
 
 export const generateStockInsight = async (stockData) => {
-  const prompt = `Provide a detailed financial insight for ${stockData.name} (${stockData.symbol}).
-  Return the response in a structured JSON format with fields: summary, riskLevel, sentiment, volatility, shortTermOutlook.
+  const prompt = `Generate a short financial summary for ${stockData.name} (${stockData.symbol}).
+  The stock is trading at ₹${stockData.price} with a movement of ${stockData.change}%.
   
-  CRITICAL REQUIREMENTS:
-  - The analysis MUST be about ${stockData.name}.
-  - Return ONLY ONE JSON object. Do NOT repeat yourself.
-  - Do NOT wrap the JSON in markdown code blocks.
-  - Provide 3-4 bullet points of educational insight in the 'summary' field.
-  - Every field must be a STRING.`;
+  IMPORTANT INSTRUCTIONS:
+  1. SIMULATE 1 sentence of recent "Market News" (like earning report, expansion deal, etc) that drives this price.
+  2. Return ONLY ONE RAW JSON OBJECT. No words before or after it.
+  3. Do not use double quotes (") inside the summary text fields.
+  
+  EXACT OUTPUT FORMAT:
+  {
+    "summary": "Place the simulated news driver and short analysis here.",
+    "riskLevel": "Low/Medium/High",
+    "sentiment": "Bullish/Bearish/Neutral",
+    "volatility": "Low/Medium/High",
+    "shortTermOutlook": "Brief outlook statement"
+  }`;
   
   try {
-    const text = await askAIWithFallback(prompt);
-    const parsed = extractJSON(text);
-    if (parsed) return parsed;
+    const text = await callHF(prompt);
+    try {
+      // Smarter extraction: Find the FIRST valid { ... } block
+      const jsonMatch = text.match(/\{[\s\S]*?\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+    } catch (e) {
+      console.warn("Failed to parse AI JSON response.");
+    }
     
+    // Nuclear Scrubber: Meticulously strip ALL JSON-like artifacts
     const cleanSummary = text
-      .replace(/```json|```|\{|\}|\[|\]/g, "")
-      .replace(/"(summary|riskLevel|sentiment|volatility|shortTermOutlook|industry|sector|summaryOfBenefits|benefits|outlook|analysis|risk)":/gi, "")
-      .replace(/"\s*,\s*"/g, "\n")
-      .replace(/^"|"$|",$/g, "")
-      .replace(/\\"/g, '"')
-      .replace(/\s+/g, " ")
+      .replace(/```json|```|\{|\}|\[|\]/g, "") // Remove all brackets and blocks
+      .replace(/"(summary|riskLevel|sentiment|volatility|shortTermOutlook|industry|sector|summaryOfBenefits|benefits|outlook|analysis|risk)":/gi, "") // Remove common keys
+      .replace(/"\s*,\s*"/g, "\n") // Convert comma-separated quoted values into new lines
+      .replace(/^"|"$|",$/g, "") // Remove leading/trailing quotes and trailing commas
+      .replace(/\\"/g, '"') // Unescape quotes
+      .replace(/\s+/g, " ") // Normalize spaces
       .trim();
     
     return {
@@ -192,40 +198,5 @@ export const generateStockInsight = async (stockData) => {
 
 export const explainTradingConcept = async (topic) => {
   const prompt = `Explain the trading concept of "${topic}" in simple, beginner-friendly terms for a student using a simulator. Provide an example if possible.`;
-  return await askAIWithFallback(prompt);
-};
-
-export const getWatchlistInsights = async (watchlistData) => {
-  const prompt = `Analyze this user's stock watchlist and provide a summary of trends, potential sudden movements, and volatility alerts.
-  Watchlist: ${JSON.stringify(watchlistData)}
-  Return the response in a structured JSON format with fields: globalSummary, stockInsights (array of objects with symbol, trend, volatility, and aiNote).`;
-  
-  try {
-    const text = await askAIWithFallback(prompt);
-    const parsed = extractJSON(text);
-    if (parsed) return parsed;
-    
-    return {
-      globalSummary: "Watchlist analysis completed. Monitor for volatility in high-beta stocks.",
-      stockInsights: watchlistData.map(s => ({ symbol: s.symbol, trend: "Neutral", volatility: "Standard", aiNote: "Steady performance observed." }))
-    };
-  } catch (error) {
-    return { globalSummary: "Watchlist AI temporarily unavailable.", stockInsights: [] };
-  }
-};
-
-export const summarizeNews = async (headlines) => {
-  const prompt = `Summarize these financial news headlines and provide sentiment (positive, neutral, negative) for each.
-  Headlines: ${JSON.stringify(headlines)}
-  Return the response in a structured JSON format with a "summaries" array containing objects with "headline", "summary", and "sentiment".`;
-  
-  try {
-    const text = await askAIWithFallback(prompt);
-    const parsed = extractJSON(text);
-    if (parsed) return parsed;
-    
-    return { summaries: headlines.map(h => ({ headline: h, summary: "", sentiment: "neutral" })) };
-  } catch (error) {
-    return { summaries: [] };
-  }
+  return await callHF(prompt);
 };

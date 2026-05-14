@@ -8,14 +8,6 @@ import LoadingSkeleton from "../components/ai/LoadingSkeleton.jsx";
 import RiskBadge from "../components/ai/RiskBadge.jsx";
 import MiniSparkline from "../components/MiniSparkline.jsx";
 
-// Mock news headlines for AI summarization
-const MOCK_HEADLINES = [
-  "Indian markets rally as RBI holds interest rates steady",
-  "Adani Group stocks surge following infrastructure deal announcement",
-  "Tech sector faces headwinds amid global chip shortage concerns",
-  "FII inflows reach record high as rupee stabilizes against dollar",
-  "SEBI introduces new regulations for F&O trading to curb speculation",
-];
 
 // Sentiment color config
 function SentimentPill({ sentiment }) {
@@ -112,6 +104,7 @@ function Dashboard() {
   const [wallet, setWallet] = useState(0);
   const [portfolio, setPortfolio] = useState([]);
   const [realizedProfit, setRealizedProfit] = useState(0);
+  const [realizedProfitToday, setRealizedProfitToday] = useState(0);
   const [livePrices, setLivePrices] = useState({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -130,13 +123,19 @@ function Dashboard() {
         setWallet(w.walletBalance);
         setPortfolio(p);
         setRealizedProfit(profile.realizedProfit || 0);
+        setRealizedProfitToday(profile.realizedProfitToday || 0);
         
         // Calculate Gainers/Losers
         const sorted = [...stocks].sort((a, b) => b.change - a.change);
         setTopGainers(sorted.slice(0, 4));
         setTopLosers([...sorted].reverse().slice(0, 4));
 
-        await updatePrices(p);
+        // Seed livePrices state immediately so Day G/L calculates without waiting for socket ticks
+        const initialPrices = {};
+        stocks.forEach((s) => {
+          initialPrices[s.symbol] = { price: s.price, change: s.change };
+        });
+        setLivePrices(initialPrices);
       } catch (err) {
         console.error("Error fetching dashboard data:", err);
       } finally {
@@ -193,36 +192,163 @@ function Dashboard() {
     if (newsLoading) return;
     setNewsLoading(true);
     setNewsLoaded(true);
+
+    // Generate real-time dynamic headlines derived from actual simulator performance data
+    const dynamicHeadlines = [
+      `Markets track volatility as ${topGainers[0]?.symbol || "leaders"} leads the index with positive momentum today.`,
+      `${topLosers[0]?.symbol || "Heavyweights"} faces correction pressure as sellers dominate trading volume.`,
+      `${topGainers[1]?.symbol || "Bluechips"} surges by ${Math.abs(topGainers[1]?.change || 0).toFixed(2)}% attracting institutional buyer interest.`,
+      `${topLosers[1]?.symbol || "Market sectors"} remains soft dropping ${(topLosers[1]?.change || 0).toFixed(2)}% following intraday profit booking.`,
+      "Retail activity spikes across major banking and information technology counters on the NSE."
+    ];
+
     try {
-      const data = await getNewsSummary(MOCK_HEADLINES);
+      const data = await getNewsSummary(dynamicHeadlines);
       setNewsData(data.summaries || []);
     } catch {
-      setNewsData(MOCK_HEADLINES.map((h) => ({ headline: h, summary: "", sentiment: "neutral" })));
+      setNewsData(dynamicHeadlines.map((h) => ({ headline: h, summary: "Real-time analysis temporarily offline.", sentiment: "neutral" })));
     } finally {
       setNewsLoading(false);
     }
   }
 
-  const portfolioValue = portfolio.reduce((acc, item) => {
-    const current = livePrices[item.symbol]?.price || item.buyPrice;
-    return acc + current * item.quantity;
-  }, 0);
+  let portfolioValue = 0;
+  let profit = 0;
+  let dailyChange = 0;
 
-  const profit = portfolio.reduce((acc, item) => {
-    const current = livePrices[item.symbol]?.price || item.buyPrice;
-    return acc + (current - item.buyPrice) * item.quantity;
-  }, 0);
+  for (let i = 0; i < portfolio.length; i++) {
+    const item = portfolio[i];
+    let currentPrice = item.buyPrice;
+    
+    // Check if we have live price data for this stock
+    if (livePrices[item.symbol] && livePrices[item.symbol].price) {
+        currentPrice = livePrices[item.symbol].price;
+    }
+    
+    // Calculate total portfolio value
+    portfolioValue = portfolioValue + (currentPrice * item.quantity);
+    
+    // Calculate current profit vs buy price
+    profit = profit + ((currentPrice - item.buyPrice) * item.quantity);
 
-  const dailyChange = portfolio.reduce((acc, item) => {
-    const s = livePrices[item.symbol];
-    if (!s) return acc;
-    const prevClose = s.price / (1 + (s.change || 0) / 100);
-    return acc + (s.price - prevClose) * item.quantity;
-  }, 0);
+    // Calculate daily change based on previous close
+    const stockData = livePrices[item.symbol];
+    if (stockData) {
+        let changePercent = 0;
+        if (stockData.change) {
+            changePercent = stockData.change;
+        }
+        const prevClose = stockData.price / (1 + (changePercent / 100));
+        dailyChange = dailyChange + ((stockData.price - prevClose) * item.quantity);
+    }
+  }
 
-  const dailyChangePercent = portfolioValue > 0 ? (dailyChange / (portfolioValue - dailyChange)) * 100 : 0;
+  // Add the profit realized today to the daily change
+  dailyChange = dailyChange + realizedProfitToday;
+
+  // Calculate percentage of daily change
+  let dailyChangePercent = 0;
+  if (portfolioValue > 0) {
+      dailyChangePercent = (dailyChange / (portfolioValue - dailyChange)) * 100;
+  }
 
   const totalProfit = realizedProfit + profit;
+
+  // Helper function to render AI Content using basic if/else statements
+  const renderAiContent = () => {
+    if (!aiAnalyzed) {
+      return (
+        <div className="flex flex-col md:flex-row gap-10">
+          <div className="flex-1">
+            <p className="text-slate-500 font-medium leading-relaxed text-lg mb-8">
+              Your investment strategy is currently yielding a net performance of{" "}
+              <span className={`font-black ${profit >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
+                {profit >= 0 ? "₹" + profit.toFixed(2) + " Surplus" : "₹" + Math.abs(profit).toFixed(2) + " Deficit"}
+              </span>{" "}
+              relative to your entry prices.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <div className="bg-slate-100 px-4 py-2 rounded-xl text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
+                Click "Analyze with AI" for insights
+              </div>
+            </div>
+          </div>
+          <div className="w-full md:w-64 h-64 bg-slate-50 rounded-3xl border border-slate-200 flex flex-col items-center justify-center group-hover:border-indigo-200 transition-colors">
+            <div className="w-20 h-20 bg-white rounded-2xl shadow-lg border border-slate-100 flex items-center justify-center mb-4 transform group-hover:rotate-6 transition-transform">
+              <svg className="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            </div>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Visual Charts</span>
+            <span onClick={() => navigate("/dashboard/analytics")} className="text-xs font-bold text-indigo-600 mt-1 cursor-pointer hover:underline">
+              Explore Details
+            </span>
+          </div>
+        </div>
+      );
+    } else if (aiLoading) {
+      return (
+        <div className="space-y-5">
+          <LoadingSkeleton lines={3} />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="h-16 bg-slate-100 rounded-2xl animate-pulse" />
+            <div className="h-16 bg-slate-100 rounded-2xl animate-pulse" />
+          </div>
+          <LoadingSkeleton lines={2} />
+        </div>
+      );
+    } else if (aiAnalysis) {
+      return (
+        <div className="space-y-5">
+          {/* Score + Risk Row */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 text-center">
+              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">AI Score</p>
+              <p className="text-4xl font-black text-indigo-700">{aiAnalysis.score}</p>
+              <p className="text-[10px] text-indigo-500 font-medium mt-1">/ 100</p>
+            </div>
+            <div className="flex items-center">
+              <RiskBadge level={aiAnalysis.riskLevel} score={Math.round((aiAnalysis.score / 100) * 10)} reasoning={aiAnalysis.sectorExposure} />
+            </div>
+          </div>
+
+          {/* Summary */}
+          <p className="text-slate-600 font-medium leading-relaxed text-sm">{aiAnalysis.summary}</p>
+
+          {/* Diversification */}
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Diversification</p>
+            <p className="text-sm text-slate-700 font-medium">{aiAnalysis.diversification}</p>
+          </div>
+
+          {/* Suggestions */}
+          {aiAnalysis.suggestions?.length > 0 && (
+            <div>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">AI Suggestions</p>
+              <ul className="space-y-2">
+                {aiAnalysis.suggestions.map((s, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
+                    <span className="text-indigo-500 mt-0.5 font-black shrink-0">→</span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          <button
+            onClick={() => { setAiAnalyzed(false); setAiAnalysis(null); }}
+            className="text-xs text-indigo-600 font-bold hover:underline"
+          >
+            ← Reset analysis
+          </button>
+        </div>
+      );
+    } else {
+      return (
+        <p className="text-rose-500 text-sm font-medium">AI analysis failed. Please try again.</p>
+      );
+    }
+  };
 
   if (loading) {
     return (
@@ -334,90 +460,7 @@ function Dashboard() {
                 )}
               </div>
 
-              {!aiAnalyzed ? (
-                <div className="flex flex-col md:flex-row gap-10">
-                  <div className="flex-1">
-                    <p className="text-slate-500 font-medium leading-relaxed text-lg mb-8">
-                      Your investment strategy is currently yielding a net performance of{" "}
-                      <span className={`font-black ${profit >= 0 ? "text-emerald-500" : "text-rose-500"}`}>
-                        {profit >= 0 ? "₹" + profit.toFixed(2) + " Surplus" : "₹" + Math.abs(profit).toFixed(2) + " Deficit"}
-                      </span>{" "}
-                      relative to your entry prices.
-                    </p>
-                    <div className="flex flex-wrap gap-3">
-                      <div className="bg-slate-100 px-4 py-2 rounded-xl text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-indigo-600"></span>
-                        Click "Analyze with AI" for insights
-                      </div>
-                    </div>
-                  </div>
-                  <div className="w-full md:w-64 h-64 bg-slate-50 rounded-3xl border border-slate-200 flex flex-col items-center justify-center group-hover:border-indigo-200 transition-colors">
-                    <div className="w-20 h-20 bg-white rounded-2xl shadow-lg border border-slate-100 flex items-center justify-center mb-4 transform group-hover:rotate-6 transition-transform">
-                      <svg className="w-10 h-10 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                    </div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Visual Charts</span>
-                    <span onClick={() => navigate("/dashboard/analytics")} className="text-xs font-bold text-indigo-600 mt-1 cursor-pointer hover:underline">
-                      Explore Details
-                    </span>
-                  </div>
-                </div>
-              ) : aiLoading ? (
-                <div className="space-y-5">
-                  <LoadingSkeleton lines={3} />
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="h-16 bg-slate-100 rounded-2xl animate-pulse" />
-                    <div className="h-16 bg-slate-100 rounded-2xl animate-pulse" />
-                  </div>
-                  <LoadingSkeleton lines={2} />
-                </div>
-              ) : aiAnalysis ? (
-                <div className="space-y-5">
-                  {/* Score + Risk Row */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 text-center">
-                      <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">AI Score</p>
-                      <p className="text-4xl font-black text-indigo-700">{aiAnalysis.score}</p>
-                      <p className="text-[10px] text-indigo-500 font-medium mt-1">/ 100</p>
-                    </div>
-                    <div className="flex items-center">
-                      <RiskBadge level={aiAnalysis.riskLevel} score={Math.round((aiAnalysis.score / 100) * 10)} reasoning={aiAnalysis.sectorExposure} />
-                    </div>
-                  </div>
-
-                  {/* Summary */}
-                  <p className="text-slate-600 font-medium leading-relaxed text-sm">{aiAnalysis.summary}</p>
-
-                  {/* Diversification */}
-                  <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Diversification</p>
-                    <p className="text-sm text-slate-700 font-medium">{aiAnalysis.diversification}</p>
-                  </div>
-
-                  {/* Suggestions */}
-                  {aiAnalysis.suggestions?.length > 0 && (
-                    <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">AI Suggestions</p>
-                      <ul className="space-y-2">
-                        {aiAnalysis.suggestions.map((s, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
-                            <span className="text-indigo-500 mt-0.5 font-black shrink-0">→</span>
-                            {s}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={() => { setAiAnalyzed(false); setAiAnalysis(null); }}
-                    className="text-xs text-indigo-600 font-bold hover:underline"
-                  >
-                    ← Reset analysis
-                  </button>
-                </div>
-              ) : (
-                <p className="text-rose-500 text-sm font-medium">AI analysis failed. Please try again.</p>
-              )}
+              {renderAiContent()}
             </div>
           </div>
 
@@ -430,12 +473,38 @@ function Dashboard() {
                 <p className="text-indigo-200 font-medium leading-relaxed">
                   Global markets are showing high volatility today. Keep an eye on your watchlist.
                 </p>
+
+                {/* Quick Stats Widget */}
+                <div className="mt-8 grid grid-cols-2 gap-4">
+                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:bg-white/20 transition-all cursor-default">
+                    <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-1">NIFTY 50</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-lg font-black text-white">22,456.20</span>
+                      <span className="text-[10px] font-bold text-emerald-400">+0.45%</span>
+                    </div>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 hover:bg-white/20 transition-all cursor-default">
+                    <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-1">SENSEX</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-lg font-black text-white">73,903.15</span>
+                      <span className="text-[10px] font-bold text-emerald-400">+0.38%</span>
+                    </div>
+                  </div>
+                  <div className="col-span-2 bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
+                    <div className="flex justify-between items-center mb-2">
+                       <p className="text-[10px] font-black text-indigo-300 uppercase tracking-widest">Market Volatility</p>
+                       <span className="text-[10px] font-black text-white uppercase tracking-widest bg-rose-500/50 px-2 py-0.5 rounded-full">High</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-indigo-950 rounded-full overflow-hidden">
+                       <div className="h-full bg-gradient-to-r from-emerald-500 via-amber-500 to-rose-500 w-[72%]"></div>
+                    </div>
+                  </div>
+                </div>
               </div>
               <div className="mt-10">
                 <button onClick={() => navigate("/dashboard/market")} className="w-full bg-white text-indigo-900 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl hover:bg-indigo-50 transition-all active:scale-95">
                   Execute Trade
                 </button>
-                <p className="text-center text-indigo-400 text-[10px] font-bold mt-4 uppercase tracking-widest">Trusted by 10k+ Traders</p>
               </div>
             </div>
           </div>
@@ -563,7 +632,6 @@ function Dashboard() {
                       {item.summary && <p className="text-xs text-slate-500 font-medium leading-relaxed">{item.summary}</p>}
                       <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-50">
                         <SentimentPill sentiment={item.sentiment || "neutral"} />
-                        <span className="text-[10px] text-slate-300 font-medium">AI Summary</span>
                       </div>
                     </div>
                   ))}

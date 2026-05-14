@@ -55,10 +55,7 @@ export default function RecommendationCard({ symbol, category, confidence, reaso
       <p className="text-xs text-slate-500 font-medium leading-relaxed">{reason}</p>
 
       {/* Disclaimer + Action */}
-      <div className="flex items-center justify-between pt-2 border-t border-slate-50">
-        <span className="text-[9px] text-slate-300 font-medium uppercase tracking-widest">
-          Educational simulation only
-        </span>
+      <div className="flex items-center justify-end pt-2 border-t border-slate-50">
         {onBuy && (
           <button
             onClick={() => onBuy(symbol)}

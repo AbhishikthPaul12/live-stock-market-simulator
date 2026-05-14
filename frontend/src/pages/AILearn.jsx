@@ -258,8 +258,6 @@ export default function AILearn() {
                     <div>
                       <h2 className="text-xl font-black text-slate-900 tracking-tight">{selectedTopic?.title}</h2>
                       <div className="flex items-center gap-2 mt-1">
-                        <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
-                        <span className="text-xs font-medium text-indigo-600">AI-Generated Explanation</span>
                       </div>
                     </div>
                   </div>
@@ -288,15 +286,6 @@ export default function AILearn() {
                       </div>
                     )}
                   </div>
-
-                  {/* Disclaimer */}
-                  {!loading && !error && explanation && (
-                    <div className="mx-8 mb-6 px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl">
-                      <p className="text-[10px] text-slate-400 font-medium">
-                        📚 This explanation is AI-generated for educational purposes only. Always consult a qualified financial advisor before making investment decisions.
-                      </p>
-                    </div>
-                  )}
                 </motion.div>
               )}
             </AnimatePresence>
