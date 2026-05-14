@@ -16,7 +16,7 @@ A premium, glassmorphic UI built with React.js, designed to provide an instituti
 - **Toast System**: Custom-built notification system for all app interactions.
 - **Demo Mode**: Instant access with pre-seeded data for rapid evaluation.
 
-## 📦 Key Libraries
+## Key Libraries
 
 | Package | Purpose |
 | :--- | :--- |
