@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { getAlerts, createAlert, deleteAlert, getAllStocks } from "../api/data.js";
 import { useSocket } from "../context/SocketContext.jsx";
+import { useToast } from "../context/ToastContext";
 
 function Alerts() {
+  const { addToast } = useToast();
   const [alerts, setAlerts] = useState([]);
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,15 +44,23 @@ function Alerts() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.symbol || !form.targetPrice) return;
+    if (!form.symbol) {
+      addToast("Please select an asset to monitor", "error");
+      return;
+    }
+    if (!form.targetPrice || Number(form.targetPrice) <= 0) {
+      addToast("Target price must be a positive number", "error");
+      return;
+    }
     setSubmitting(true);
     try {
       await createAlert(form);
       const updated = await getAlerts();
       setAlerts(updated);
       setForm({ symbol: "", targetPrice: "", type: "ABOVE" });
+      addToast(`Alert created for ${form.symbol}`, "success");
     } catch (err) {
-      alert("Error creating alert");
+      addToast("Error creating alert", "error");
     } finally {
       setSubmitting(false);
     }
@@ -60,8 +70,9 @@ function Alerts() {
     try {
       await deleteAlert(id);
       setAlerts(alerts.filter(a => a._id !== id));
+      addToast("Alert removed", "info");
     } catch (err) {
-      console.error(err);
+      addToast("Error deleting alert", "error");
     }
   };
 
@@ -72,7 +83,7 @@ function Alerts() {
     <div className="p-6 md:p-10 bg-slate-50 min-h-screen">
       <div className="max-w-5xl mx-auto">
         <header className="mb-12">
-          <h1 className="text-6xl font-black text-slate-900 tracking-tighter">Price Alerts</h1>
+          <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter">Price Alerts</h1>
           <p className="text-slate-500 mt-4 font-medium text-xl italic opacity-80 leading-relaxed max-w-2xl">
             Configure smart triggers to monitor market volatility. We'll notify you the moment your targets are reached.
           </p>
@@ -99,10 +110,12 @@ function Alerts() {
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3">Target Price (₹)</label>
                       <input 
                         type="number"
-                        placeholder="0.00"
+                        placeholder="Min 1.00 (e.g. 2500)"
                         value={form.targetPrice}
                         onChange={(e) => setForm({...form, targetPrice: e.target.value})}
                         className="w-full bg-slate-50 border-0 rounded-2xl p-4 text-sm font-black focus:ring-2 focus:ring-indigo-600 outline-none"
+                        min="0.01"
+                        step="0.01"
                       />
                    </div>
                    <div>

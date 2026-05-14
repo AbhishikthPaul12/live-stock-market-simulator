@@ -228,7 +228,7 @@ function Market() {
               <span className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse shadow-lg shadow-emerald-200"></span>
               <span className="text-xs font-black text-emerald-600 uppercase tracking-[0.3em]">Live Exchange</span>
             </div>
-            <h1 className="text-6xl font-black text-slate-900 tracking-tighter">Market Overview</h1>
+            <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter">Market Overview</h1>
             <p className="text-slate-500 mt-4 font-medium text-xl max-w-xl leading-relaxed opacity-80">
               Access 100+ global equity assets with institutional-grade real-time price execution.
             </p>
@@ -240,7 +240,7 @@ function Market() {
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Ticker symbol (e.g. TCS)..."
+                placeholder="Search symbol (e.g. RELIANCE)..."
                 className="w-full bg-white border border-slate-200 shadow-xl shadow-slate-200/40 rounded-3xl p-6 pl-16 text-slate-900 font-black placeholder-slate-300 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none text-lg"
               />
               <svg className="w-7 h-7 absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">

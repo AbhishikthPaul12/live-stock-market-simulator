@@ -1,16 +1,58 @@
-# React + Vite
+# StockSim Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A premium, glassmorphic UI built with React.js, designed to provide an institutional-grade trading experience for the Indian stock market.
 
-Currently, two official plugins are available:
+## Key UX Components
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### Real-Time Dashboard
+- **Socket Integration**: Listens for live price feeds to update portfolios and charts instantly without page refreshes.
+- **Dynamic Charts**: Multi-timeframe area charts (1D, 1W, 1M, 1YR, 3YRS) with responsive crosshairs.
 
-## React Compiler
+### AI Learning Hub
+- **Interactive Tutor**: A dedicated section to ask AI about market concepts.
+- **Smart Insights**: Per-stock AI summaries that explain price action using simulated market news.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Professional Feedback
+- **Toast System**: Custom-built notification system for all app interactions.
+- **Demo Mode**: Instant access with pre-seeded data for rapid evaluation.
 
-## Expanding the ESLint configuration
+## Key Libraries
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+| Package | Purpose |
+| :--- | :--- |
+| **react** | Core UI library (v19) |
+| **react-router-dom** | Declarative routing for Single Page Application (SPA) |
+| **tailwindcss** | Utility-first CSS framework for modern styling |
+| **framer-motion** | Production-ready animations and gesture library |
+| **recharts** | Composable charting library for financial data visualization |
+| **socket.io-client** | Real-time WebSocket client for live data sync |
+| **axios** | Promise-based HTTP client for API communication |
+| **react-markdown** | Component to render AI-generated markdown safely |
+| **lucide-react** | Beautiful and consistent icon set |
+
+## Technology Stack
+
+- **Framework**: React.js (Vite)
+- **Styling**: Tailwind CSS & Framer Motion
+- **Charting**: Recharts
+- **State Management**: Context API (Auth, Socket, Toasts)
+
+## Installation
+
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+2. **Setup environment**:
+   Create a `.env` in the root (optional if running via the backend server):
+   ```env
+   VITE_API_URL=http://localhost:5000
+   ```
+3. **Run Development Server**:
+   ```bash
+   npm run dev
+   ```
+4. **Build for Production**:
+   ```bash
+   npm run build
+   ```

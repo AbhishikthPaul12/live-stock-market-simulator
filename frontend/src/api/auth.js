@@ -9,6 +9,12 @@ export const loginUser = async (data) => {
   return res.data;
 };
 
+export const guestLogin = async () => {
+  const res = await axios.post("/auth/guest-login");
+  localStorage.setItem("user", JSON.stringify(res.data));
+  return res.data;
+};
+
 export const getProfile = async () => {
   const res = await axios.get("/auth/profile");
   return res.data;
