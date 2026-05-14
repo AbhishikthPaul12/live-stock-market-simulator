@@ -12,6 +12,7 @@ export default function PortfolioAIAnalysis({ data, loading, error }) {
     return text.replace(/```json|```/g, "").replace(/\{[\s\S]*\}/g, "").trim();
   };
 
+  const { score, summary, riskLevel, diversification, suggestions } = data;
   const cleanSummary = sanitizeSummary(summary);
 
   return (
