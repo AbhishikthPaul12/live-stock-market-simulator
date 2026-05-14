@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { getRiskAnalysis } from "../api/ai.js";
+import { useToast } from "../context/ToastContext";
 import RiskBadge from "./ai/RiskBadge.jsx";
 
 function BuyModal({ stock, onClose, onConfirm }) {
+  const { addToast } = useToast();
   const [qty, setQty] = useState(1);
   const [riskData, setRiskData] = useState(null);
   const [riskLoading, setRiskLoading] = useState(false);
@@ -23,7 +25,7 @@ function BuyModal({ stock, onClose, onConfirm }) {
 
   function handleConfirm() {
     if (!qty || qty <= 0) {
-      alert("Please enter a valid quantity");
+      addToast("Please enter a valid quantity", "error");
       return;
     }
     onConfirm(stock.symbol, qty);
@@ -62,6 +64,7 @@ function BuyModal({ stock, onClose, onConfirm }) {
             <input
               type="number"
               value={qty}
+              placeholder="Min 1 unit"
               onChange={(e) => setQty(Math.max(1, Number(e.target.value)))}
               className="w-full bg-white border-2 border-slate-100 rounded-2xl p-4 text-slate-900 font-black text-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
               min="1"

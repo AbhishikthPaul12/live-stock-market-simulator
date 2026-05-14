@@ -69,3 +69,8 @@ export const getStockHistory = async (symbol, timeframe = '1M') => {
   const res = await axios.get(`/stocks/${symbol}/history?timeframe=${timeframe}`);
   return res.data;
 };
+
+export const resetGuestData = async () => {
+  const res = await axios.post("/auth/reset-guest");
+  return res.data;
+};

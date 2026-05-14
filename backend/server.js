@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import helmet from "helmet";
 import connectDB from "./config/db.js";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -15,22 +16,33 @@ import leaderboardRoutes from "./routes/leaderboardRoutes.js";
 import alertRoutes from "./routes/alertRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import { initSocketEmitter } from "./services/stockService.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 connectDB();
 
 const app = express();
 const httpServer = createServer(app);
 
+// CORS configuration
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"]
+};
+
 // Socket.IO server with CORS matching Express
 const io = new Server(httpServer, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+  cors: corsOptions
 });
 
 // Middleware
-app.use(cors());
+app.use(helmet()); // Security Headers
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Test route
@@ -46,7 +58,17 @@ app.use("/api/user", userRoutes);
 app.use("/api/stocks", stockRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/alerts", alertRoutes);
-app.use("/api/ai", aiRoutes);
+app.use("/api/ai", aiRoutes); // Strict limiter removed
+
+// Static Serving for Production
+const frontendPath = path.join(__dirname, "../frontend/dist");
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(frontendPath));
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api")) return next();
+    res.sendFile(path.join(frontendPath, "index.html"));
+  });
+}
 
 app.use(notFound)
 app.use(errorHandler)

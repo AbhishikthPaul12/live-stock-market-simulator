@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { updateProfile, getProfile } from "../api/auth.js";
 import { getWallet } from "../api/data.js";
 import { useNavigate } from "react-router-dom";
+import { useToast } from "../context/ToastContext";
 
 function Profile() {
+  const { addToast } = useToast();
   const [user, setUser] = useState(JSON.parse(localStorage.getItem("user")));
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
@@ -35,14 +37,23 @@ function Profile() {
 
   async function handleUpdateProfile(e) {
     e.preventDefault();
+    if (user?.isGuest) {
+      addToast("Profile updates are disabled in Demo Mode.", "info");
+      setShowProfileModal(false);
+      return;
+    }
+    if (editName.trim().length < 3) {
+      addToast("Full Name must be at least 3 characters long.", "error");
+      return;
+    }
     setLoading(true);
     try {
       const updated = await updateProfile({ name: editName, email: editEmail });
       setUser(updated);
       setShowProfileModal(false);
-      alert("Profile updated successfully!");
+      addToast("Profile updated successfully!", "success");
     } catch (error) {
-      alert(error.response?.data?.message || "Failed to update profile");
+      addToast(error.response?.data?.message || "Failed to update profile", "error");
     } finally {
       setLoading(false);
     }
@@ -52,8 +63,19 @@ function Profile() {
     <div className="p-6 md:p-10 bg-slate-50 min-h-screen">
       <div className="max-w-3xl mx-auto">
         <header className="mb-12">
-          <h1 className="text-5xl font-black text-slate-900 tracking-tighter uppercase">Profile</h1>
+          <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase">Profile</h1>
           <p className="text-slate-500 mt-2 font-medium text-lg italic opacity-80">Manage your identity and financial configuration.</p>
+          {user?.isGuest && (
+            <div className="mt-6 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center gap-4">
+              <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shrink-0">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              </div>
+              <div>
+                <p className="text-xs font-black text-indigo-900 uppercase tracking-widest">Demo Mode Active</p>
+                <p className="text-[10px] text-indigo-600 font-medium">Certain profile and security features are restricted to protect the global demo account.</p>
+              </div>
+            </div>
+          )}
         </header>
 
         <div className="bg-white rounded-[40px] border border-slate-200 shadow-sm overflow-hidden">
@@ -129,6 +151,7 @@ function Profile() {
                     type="text"
                     className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-4 text-slate-900 font-bold focus:bg-white focus:border-indigo-500 transition-all outline-none"
                     value={editName}
+                    placeholder="Min 3 characters"
                     onChange={(e) => setEditName(e.target.value)}
                     required
                   />
@@ -166,23 +189,27 @@ function Profile() {
               </div>
               <h2 className="text-2xl font-black text-slate-900 tracking-tight uppercase mb-4">Security Access</h2>
               <p className="text-slate-500 text-sm font-medium mb-8">
-                To change your password, you must initiate the security reset protocol from the login screen. This ensures multi-factor validation.
+                {user?.isGuest 
+                  ? "Password management is disabled for the demo account to ensure consistent access for all evaluators."
+                  : "To change your password, you must initiate the security reset protocol from the login screen. This ensures multi-factor validation."}
               </p>
               <div className="space-y-4">
-                <button 
-                  onClick={() => {
-                    localStorage.removeItem("user");
-                    navigate("/forgot-password");
-                  }}
-                  className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all"
-                >
-                  Logout & Reset Password
-                </button>
+                {!user?.isGuest && (
+                  <button 
+                    onClick={() => {
+                      localStorage.removeItem("user");
+                      navigate("/forgot-password");
+                    }}
+                    className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all"
+                  >
+                    Logout & Reset Password
+                  </button>
+                )}
                 <button 
                   onClick={() => setShowSecurityModal(false)}
                   className="w-full bg-slate-50 text-slate-400 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all"
                 >
-                  Keep Current Security
+                  {user?.isGuest ? "Return to Profile" : "Keep Current Security"}
                 </button>
               </div>
             </div>

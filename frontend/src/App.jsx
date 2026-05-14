@@ -48,7 +48,7 @@ function App() {
           <Route path="/reset-password/:token?" element={<ResetPassword />} />
           <Route
             path="/dashboard"
-            element={user ? <RootLayout setUser={setUser} /> : <Navigate to="/" />}
+            element={user ? <RootLayout user={user} setUser={setUser} /> : <Navigate to="/" />}
           >
             <Route index element={<Dashboard />} />
             <Route path="market" element={<Market />} />

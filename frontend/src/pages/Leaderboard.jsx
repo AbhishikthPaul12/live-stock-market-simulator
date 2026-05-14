@@ -36,7 +36,7 @@ function Leaderboard() {
             <div className="w-12 h-1 bg-indigo-600 rounded-full"></div>
             <span className="text-xs font-black uppercase tracking-[0.3em] text-indigo-600">Global Rankings</span>
           </div>
-          <h1 className="text-6xl font-black text-slate-900 tracking-tighter">Trader Leaderboard</h1>
+          <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tighter">Trader Leaderboard</h1>
           <p className="text-slate-500 mt-4 font-medium text-xl max-w-2xl leading-relaxed">
             Celebrating the most strategic minds in the simulation. Rankings are calculated based on <span className="text-slate-900 font-bold underline decoration-indigo-200 underline-offset-4">Profit Gained</span> from trading.
           </p>

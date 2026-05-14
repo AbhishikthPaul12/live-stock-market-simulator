@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { forgotPassword } from "../api/auth.js";
 import { Link } from "react-router-dom";
+import { useToast } from "../context/ToastContext";
 
 export default function ForgotPassword() {
+  const { addToast } = useToast();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -11,6 +13,10 @@ export default function ForgotPassword() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!email || !email.includes("@")) {
+      addToast("Please enter a valid email address", "error");
+      return;
+    }
     setLoading(true);
     setMessage("");
     try {
@@ -19,8 +25,9 @@ export default function ForgotPassword() {
       if (res.resetToken) {
         setResetToken(res.resetToken);
       }
+      addToast("Reset token generated!", "success");
     } catch (error) {
-      alert(error.response?.data?.message || "Something went wrong");
+      addToast(error.response?.data?.message || "Something went wrong", "error");
     } finally {
       setLoading(false);
     }
@@ -102,14 +109,15 @@ export default function ForgotPassword() {
           <form onSubmit={handleSubmit} className="space-y-8">
             <div>
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Email Address</label>
-              <input
-                type="email"
-                placeholder="name@company.com"
-                className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-4 text-slate-900 font-bold placeholder-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+                <input
+                  type="email"
+                  placeholder="e.g. name@example.com"
+                  className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-4 text-slate-900 font-bold placeholder-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+                <p className="text-[10px] text-slate-400 mt-2 ml-1 font-medium">Valid email address required to identify your account.</p>
             </div>
 
             <button

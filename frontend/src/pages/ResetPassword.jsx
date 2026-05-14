@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { verifyResetToken, resetPassword } from "../api/auth.js";
+import { useToast } from "../context/ToastContext";
 
 export default function ResetPassword() {
+  const { addToast } = useToast();
   const { token: urlToken } = useParams();
   const [tokenInput, setTokenInput] = useState(urlToken || "");
   const [tokenVerified, setTokenVerified] = useState(false);
@@ -21,8 +23,10 @@ export default function ResetPassword() {
       await verifyResetToken(tokenInput);
       setTokenVerified(true);
       setVerifiedToken(tokenInput);
+      addToast("Token verified successfully", "success");
     } catch (err) {
       setError(err.response?.data?.message || "Invalid or expired token");
+      addToast(err.response?.data?.message || "Invalid or expired token", "error");
     } finally {
       setLoading(false);
     }
@@ -44,11 +48,14 @@ export default function ResetPassword() {
       await resetPassword({ token: verifiedToken, newPassword });
       // Clear any stale user data so the app redirects to login, not dashboard
       localStorage.removeItem("user");
-      alert("Password reset successful! Please login with your new password.");
+      addToast("Password reset successful! Please login with your new password.", "success");
       // Force a full page reload to reset App state and show the login page
-      window.location.href = "/";
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 2000);
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong");
+      addToast(err.response?.data?.message || "Something went wrong", "error");
     } finally {
       setLoading(false);
     }
@@ -104,11 +111,12 @@ export default function ResetPassword() {
               </label>
               <input
                 type="text"
-                placeholder="Enter your reset token"
-                className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-4 text-slate-900 font-bold placeholder-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none tracking-widest text-center text-lg uppercase"
+                placeholder="8-CHAR CODE (e.g. ABC123XY)"
+                className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-4 text-slate-900 font-bold placeholder-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none tracking-[0.2em] text-center text-xl uppercase"
                 value={tokenInput}
                 onChange={(e) => setTokenInput(e.target.value.toUpperCase())}
                 required
+                maxLength={8}
                 autoFocus
               />
               <p className="text-[10px] text-slate-400 mt-2 ml-1 font-medium">
@@ -145,7 +153,7 @@ export default function ResetPassword() {
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">New Password</label>
               <input
                 type="password"
-                placeholder="••••••••"
+                placeholder="Min 6 characters"
                 className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-4 text-slate-900 font-bold placeholder-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -159,7 +167,7 @@ export default function ResetPassword() {
               <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Confirm Password</label>
               <input
                 type="password"
-                placeholder="••••••••"
+                placeholder="Retype password"
                 className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-4 text-slate-900 font-bold placeholder-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}

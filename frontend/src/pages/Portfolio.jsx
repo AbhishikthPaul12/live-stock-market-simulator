@@ -187,7 +187,7 @@ function Portfolio() {
       <div className="max-w-7xl mx-auto">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
           <div>
-            <h1 className="text-5xl font-black text-slate-900 tracking-tighter">Portfolio</h1>
+            <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter">Portfolio</h1>
             <p className="text-slate-500 mt-2 font-medium text-lg">Real-time asset tracking and performance analysis.</p>
           </div>
           <div className={`px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 border shadow-sm ${isPositive ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
@@ -294,9 +294,9 @@ function Portfolio() {
           </div>
         </div>
 
-        {/* HOLDINGS TABLE */}
+        {/* HOLDINGS */}
         <div className="bg-white rounded-[40px] shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-10 py-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/30">
+          <div className="px-6 md:px-10 py-8 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50/30 gap-4">
             <div>
               <h3 className="font-black text-slate-900 text-xl tracking-tight">Active Positions</h3>
               <p className="text-slate-400 text-xs font-medium mt-1">Manage your open trades and exit strategies.</p>
@@ -304,7 +304,7 @@ function Portfolio() {
             <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-4 py-2 rounded-xl uppercase tracking-widest border border-slate-200">{portfolio.length} Assets</span>
           </div>
           
-          <div className="overflow-x-auto">
+          <div className="p-0">
             {portfolio.length === 0 ? (
               <div className="py-32 text-center">
                 <div className="w-24 h-24 bg-slate-50 rounded-[32px] flex items-center justify-center mx-auto mb-6 border border-slate-100 shadow-inner text-4xl">💼</div>
@@ -312,72 +312,138 @@ function Portfolio() {
                 <p className="text-slate-400 text-sm mt-2 max-w-xs mx-auto font-medium">Build your wealth by exploring the market and executing your first trade.</p>
               </div>
             ) : (
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-50 bg-slate-50/10">
-                    <th className="px-10 py-6">Asset</th>
-                    <th className="px-10 py-6">Quantity</th>
-                    <th className="px-10 py-6">Avg. Buy</th>
-                    <th className="px-10 py-6">Current</th>
-                    <th className="px-10 py-6">P&L Status</th>
-                    <th className="px-10 py-6 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {portfolio.map((item, i) => {
-                    const current = livePrices[item.symbol]?.price || item.buyPrice;
-                    const profit = (current - item.buyPrice) * item.quantity;
-                    const profitPercent = ((current - item.buyPrice) / item.buyPrice) * 100;
+              <>
+                {/* Desktop Table View */}
+                <div className="hidden lg:block overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] border-b border-slate-50 bg-slate-50/10">
+                        <th className="px-10 py-6">Asset</th>
+                        <th className="px-10 py-6">Quantity</th>
+                        <th className="px-10 py-6">Avg. Buy</th>
+                        <th className="px-10 py-6">Current</th>
+                        <th className="px-10 py-6">P&L Status</th>
+                        <th className="px-10 py-6 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {portfolio.map((item, i) => {
+                        const current = livePrices[item.symbol]?.price || item.buyPrice;
+                        const profit = (current - item.buyPrice) * item.quantity;
+                        const profitPercent = ((current - item.buyPrice) / item.buyPrice) * 100;
 
-                    return (
-                      <tr key={i} className="hover:bg-slate-50/50 transition-all group">
-                        <td className="px-10 py-7">
-                          <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center font-black overflow-hidden border border-slate-100 shadow-sm group-hover:scale-105 transition-transform">
-                              {livePrices[item.symbol]?.logo ? (
-                                <img src={livePrices[item.symbol].logo} alt={item.symbol} className="w-full h-full object-contain p-2" />
-                              ) : (
-                                <span className="text-slate-400 text-xl">{item.symbol[0]}</span>
-                              )}
-                            </div>
-                            <div>
-                              <span className="font-black text-slate-900 text-lg tracking-tight block">{item.symbol}</span>
-                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Global Asset</span>
-                              <PortfolioAIInsight symbol={item.symbol} price={current} change={profitPercent} />
+                        return (
+                          <tr key={i} className="hover:bg-slate-50/50 transition-all group">
+                            <td className="px-10 py-7">
+                              <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center font-black overflow-hidden border border-slate-100 shadow-sm group-hover:scale-105 transition-transform">
+                                  {livePrices[item.symbol]?.logo ? (
+                                    <img src={livePrices[item.symbol].logo} alt={item.symbol} className="w-full h-full object-contain p-2" />
+                                  ) : (
+                                    <span className="text-slate-400 text-xl">{item.symbol[0]}</span>
+                                  )}
+                                </div>
+                                <div>
+                                  <span className="font-black text-slate-900 text-lg tracking-tight block">{item.symbol}</span>
+                                  <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Global Asset</span>
+                                  <PortfolioAIInsight symbol={item.symbol} price={current} change={profitPercent} />
+                                  <Link 
+                                    to={`/dashboard/market?symbol=${item.symbol}`}
+                                    className="mt-1 inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-600 transition-colors"
+                                  >
+                                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                                    Trade Now
+                                  </Link>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-10 py-7 text-slate-600 font-bold text-lg">{item.quantity}</td>
+                            <td className="px-10 py-7 text-slate-500 font-mono text-sm">₹{item.buyPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                            <td className="px-10 py-7 text-slate-900 font-black text-lg font-mono">₹{current.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                            <td className="px-10 py-7">
+                              <div className={`flex flex-col ${profit >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
+                                <span className="font-black text-lg tracking-tight">₹{profit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                                <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg w-fit mt-1 border ${profit >= 0 ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'}`}>
+                                  {profit >= 0 ? '▲' : '▼'} {Math.abs(profitPercent).toFixed(2)}%
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-10 py-7 text-right">
+                              <button
+                                onClick={() => setSelectedStock({ ...item, currentPrice: current })}
+                                className="bg-slate-900 text-white px-8 py-3 rounded-[18px] text-xs font-black uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-rose-600 hover:shadow-rose-100 transition-all transform active:scale-90"
+                              >
+                                Exit
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="lg:hidden divide-y divide-slate-100">
+                   {portfolio.map((item, i) => {
+                      const current = livePrices[item.symbol]?.price || item.buyPrice;
+                      const profit = (current - item.buyPrice) * item.quantity;
+                      const profitPercent = ((current - item.buyPrice) / item.buyPrice) * 100;
+                      return (
+                        <div key={i} className="p-6 space-y-6">
+                           <div className="flex justify-between items-start">
+                              <div className="flex items-center gap-4">
+                                 <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center font-black border border-slate-100 shadow-sm">
+                                    {livePrices[item.symbol]?.logo ? (
+                                      <img src={livePrices[item.symbol].logo} alt={item.symbol} className="w-full h-full object-contain p-2" />
+                                    ) : (
+                                      <span className="text-slate-400 text-lg">{item.symbol[0]}</span>
+                                    )}
+                                 </div>
+                                 <div>
+                                    <h4 className="font-black text-slate-900 text-lg tracking-tight leading-none">{item.symbol}</h4>
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Holding: {item.quantity} Units</p>
+                                 </div>
+                              </div>
+                              <div className="text-right">
+                                 <p className="text-[9px] text-slate-300 font-black uppercase tracking-widest mb-1">Live Value</p>
+                                 <p className="text-lg font-black text-slate-900 font-mono tracking-tight">₹{current.toLocaleString('en-IN')}</p>
+                              </div>
+                           </div>
+
+                           <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                              <div>
+                                 <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">Buy Price</p>
+                                 <p className="font-bold text-slate-600 text-sm">₹{item.buyPrice.toLocaleString('en-IN')}</p>
+                              </div>
+                              <div className="text-right">
+                                 <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">Performance</p>
+                                 <div className={`flex items-center justify-end gap-1 font-black text-sm ${profit >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                    {profit >= 0 ? '▲' : '▼'} {Math.abs(profitPercent).toFixed(2)}%
+                                 </div>
+                              </div>
+                           </div>
+
+                           <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => setSelectedStock({ ...item, currentPrice: current })}
+                                className="flex-1 bg-slate-900 text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-slate-200 active:scale-95 transition-all"
+                              >
+                                Liquidate Asset
+                              </button>
                               <Link 
                                 to={`/dashboard/market?symbol=${item.symbol}`}
-                                className="mt-1 inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-600 transition-colors"
+                                className="w-14 h-14 bg-indigo-50 text-indigo-600 flex items-center justify-center rounded-2xl border border-indigo-100 active:scale-95 transition-all"
                               >
-                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
-                                Trade Now
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
                               </Link>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-10 py-7 text-slate-600 font-bold text-lg">{item.quantity}</td>
-                        <td className="px-10 py-7 text-slate-500 font-mono text-sm">₹{item.buyPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                        <td className="px-10 py-7 text-slate-900 font-black text-lg font-mono">₹{current.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                        <td className="px-10 py-7">
-                          <div className={`flex flex-col ${profit >= 0 ? 'text-emerald-600' : 'text-rose-500'}`}>
-                            <span className="font-black text-lg tracking-tight">₹{profit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg w-fit mt-1 border ${profit >= 0 ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100'}`}>
-                              {profit >= 0 ? '▲' : '▼'} {Math.abs(profitPercent).toFixed(2)}%
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-10 py-7 text-right">
-                          <button
-                            onClick={() => setSelectedStock({ ...item, currentPrice: current })}
-                            className="bg-slate-900 text-white px-8 py-3 rounded-[18px] text-xs font-black uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-rose-600 hover:shadow-rose-100 transition-all transform active:scale-90"
-                          >
-                            Exit
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                           </div>
+                           <PortfolioAIInsight symbol={item.symbol} price={current} change={profitPercent} />
+                        </div>
+                      )
+                   })}
+                </div>
+              </>
             )}
           </div>
         </div>

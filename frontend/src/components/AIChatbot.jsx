@@ -91,7 +91,7 @@ const SUGGESTED_PROMPTS = [
 ];
 
 // ─── Main Chatbot Component ────────────────────────────────────────────────────
-export default function AIChatbot() {
+export default function AIChatbot({ user }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState([]);
@@ -102,31 +102,61 @@ export default function AIChatbot() {
   const inputRef = useRef(null);
   const debounceRef = useRef(null);
 
-  // Load history from localStorage
+  // Load history from localStorage (User-specific and Today-only)
   useEffect(() => {
-    const saved = localStorage.getItem("ai_chat_history");
-    if (saved) {
-      setMessages(JSON.parse(saved));
-    } else {
-      setMessages([
-        {
-          role: "assistant",
-          content:
-            "Hi! I'm **StockSim AI** 👋\n\nI can help you understand stocks, analyze your portfolio, explain market concepts, and answer trading questions.\n\nWhat would you like to know?",
-        },
-      ]);
+    if (!user) {
+      setMessages([]);
+      return;
     }
-  }, []);
 
-  // Save history to localStorage
+    const chatKey = `ai_chat_history_${user._id || user.id}`;
+    
+    // Cleanup legacy global storage if it exists
+    if (localStorage.getItem("ai_chat_history")) {
+      localStorage.removeItem("ai_chat_history");
+    }
+
+    const saved = localStorage.getItem(chatKey);
+    const today = new Date().toDateString();
+
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Filter only messages from today
+        const todayMessages = parsed.filter(msg => 
+          msg.timestamp && new Date(msg.timestamp).toDateString() === today
+        );
+
+        if (todayMessages.length > 0) {
+          setMessages(todayMessages);
+          return;
+        }
+      } catch (e) {
+        console.error("Error parsing chat history", e);
+      }
+    }
+
+    // Default welcome message if no history for today
+    setMessages([
+      {
+        role: "assistant",
+        content:
+          "Hi! I'm **StockSim AI** 👋\n\nI can help you understand stocks, analyze your portfolio, explain market concepts, and answer trading questions.\n\nWhat would you like to know?",
+        timestamp: new Date().toISOString()
+      },
+    ]);
+  }, [user]);
+
+  // Save history to localStorage (User-specific)
   useEffect(() => {
-    if (messages.length > 0) {
-      localStorage.setItem("ai_chat_history", JSON.stringify(messages));
+    if (messages.length > 0 && user) {
+      const chatKey = `ai_chat_history_${user._id || user.id}`;
+      localStorage.setItem(chatKey, JSON.stringify(messages));
     }
     if (isOpen && !isMinimized) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isOpen, isMinimized]);
+  }, [messages, isOpen, isMinimized, user]);
 
   // Focus input when opened
   useEffect(() => {
@@ -143,7 +173,11 @@ export default function AIChatbot() {
       setInput("");
       setError(null);
 
-      const userMsg = { role: "user", content: trimmed };
+      const userMsg = { 
+        role: "user", 
+        content: trimmed, 
+        timestamp: new Date().toISOString() 
+      };
       const currentMessages = [...messages, userMsg];
       setMessages(currentMessages);
       setIsLoading(true);
@@ -152,14 +186,22 @@ export default function AIChatbot() {
         const data = await sendChatMessage(trimmed, messages);
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: data.response },
+          { 
+            role: "assistant", 
+            content: data.response, 
+            timestamp: new Date().toISOString() 
+          },
         ]);
       } catch (err) {
         const errMsg = "AI service is temporarily unavailable. Please try again shortly.";
         setError(errMsg);
         setMessages((prev) => [
           ...prev,
-          { role: "assistant", content: `⚠️ ${errMsg}` },
+          { 
+            role: "assistant", 
+            content: `⚠️ ${errMsg}`, 
+            timestamp: new Date().toISOString() 
+          },
         ]);
       } finally {
         setIsLoading(false);
