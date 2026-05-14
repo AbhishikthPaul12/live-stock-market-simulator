@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { getWatchlist, removeFromWatchlist } from "../api/data.js";
 import { getStockInsight } from "../api/ai.js";
 import { useSocket } from "../context/SocketContext.jsx";
+import { useToast } from "../context/ToastContext";
 import RiskBadge from "../components/ai/RiskBadge.jsx";
 import MiniSparkline from "../components/MiniSparkline.jsx";
 
@@ -88,6 +89,7 @@ function WatchlistAIAlert({ symbol, price, change }) {
 }
 
 function Watchlist() {
+  const { addToast } = useToast();
   const [watchlist, setWatchlist] = useState([]);
   const [livePrices, setLivePrices] = useState({});
   const [loading, setLoading] = useState(true);
@@ -157,8 +159,9 @@ function Watchlist() {
     try {
       await removeFromWatchlist(symbol);
       setWatchlist(watchlist.filter((item) => item.symbol !== symbol));
+      addToast(`${symbol} removed from watchlist`, "info");
     } catch (error) {
-      alert("Failed to remove from watchlist");
+      addToast("Failed to remove from watchlist", "error");
     }
   }
 
@@ -167,7 +170,7 @@ function Watchlist() {
       <div className="max-w-7xl mx-auto">
         <header className="mb-12 flex items-end justify-between">
           <div>
-            <h1 className="text-5xl font-black text-slate-900 tracking-tighter uppercase">Watchlist</h1>
+            <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase">Watchlist</h1>
             <p className="text-slate-500 mt-2 font-medium text-lg italic opacity-80">Curated assets for strategic market entry.</p>
           </div>
           {watchlist.length > 0 && (

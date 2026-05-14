@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { getRiskAnalysis } from "../api/ai.js";
+import { useToast } from "../context/ToastContext";
 import RiskBadge from "./ai/RiskBadge.jsx";
 
 function SellModal({ stock, onClose, onConfirm }) {
+  const { addToast } = useToast();
   const [qty, setQty] = useState(1);
   const [riskData, setRiskData] = useState(null);
   const [riskLoading, setRiskLoading] = useState(false);
@@ -23,11 +25,11 @@ function SellModal({ stock, onClose, onConfirm }) {
 
   function handleConfirm() {
     if (!qty || qty <= 0) {
-      alert("Please enter a valid quantity");
+      addToast("Please enter a valid quantity", "error");
       return;
     }
     if (qty > stock.quantity) {
-      alert("You cannot sell more than you own");
+      addToast("You cannot sell more than you own", "error");
       return;
     }
     onConfirm(stock.symbol, stock.currentPrice, qty);
@@ -88,6 +90,7 @@ function SellModal({ stock, onClose, onConfirm }) {
                 <input
                   type="number"
                   value={qty}
+                  placeholder="Max units owned"
                   onChange={(e) => {
                     const val = e.target.value;
                     if (val === "" || /^\d+$/.test(val)) {

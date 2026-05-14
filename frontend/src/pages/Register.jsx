@@ -1,24 +1,42 @@
 import { useState } from "react"
 import { registerUser } from "../api/auth.js"
 import { useNavigate, Link } from "react-router-dom"
+import { useToast } from "../context/ToastContext"
 
 function Register() {
+  const { addToast } = useToast();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
 
   async function handleRegister(e) {
     e.preventDefault();
+    
+    // Client-side validation
+    if (name.trim().length < 3) {
+      addToast("Full Name must be at least 3 characters long.", "error");
+      return;
+    }
+    if (password.length < 6) {
+      addToast("Password must be at least 6 characters long.", "error");
+      return;
+    }
+    if (password !== confirmPassword) {
+      addToast("Passwords do not match.", "error");
+      return;
+    }
+
     setLoading(true);
     try {
       await registerUser({ name, email, password });
-      alert("Registration successful. Please authenticate to continue.");
+      addToast("Registration successful. Please authenticate to continue.", "success");
       navigate("/");
     } catch (error) {
-      alert(error.response?.data?.message || "Registration failed");
+      addToast(error.response?.data?.message || "Registration failed", "error");
     } finally {
       setLoading(false);
     }
@@ -40,7 +58,7 @@ function Register() {
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Full Name</label>
             <input
               type="text"
-              placeholder="John Doe"
+              placeholder="e.g. John Doe (Min 3 chars)"
               className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-4 text-slate-900 font-bold placeholder-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
               onChange={(e) => setName(e.target.value)}
               required
@@ -51,7 +69,7 @@ function Register() {
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Email</label>
             <input
               type="email"
-              placeholder="name@company.com"
+              placeholder="user@example.com"
               className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-4 text-slate-900 font-bold placeholder-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -62,9 +80,20 @@ function Register() {
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Password</label>
             <input
               type="password"
-              placeholder="••••••••"
+              placeholder="Min 6 characters"
               className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-4 text-slate-900 font-bold placeholder-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
               onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 block ml-1">Confirm Password</label>
+            <input
+              type="password"
+              placeholder="Retype password"
+              className="w-full bg-slate-50 border-2 border-slate-50 rounded-2xl p-4 text-slate-900 font-bold placeholder-slate-300 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none"
+              onChange={(e) => setConfirmPassword(e.target.value)}
               required
             />
           </div>

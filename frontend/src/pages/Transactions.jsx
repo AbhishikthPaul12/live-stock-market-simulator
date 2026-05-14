@@ -88,60 +88,109 @@ function Transactions() {
 
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xl shadow-slate-200/50">
           {filteredTransactions.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50/50 border-b border-slate-100">
-                    <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-widest">Date & Time</th>
-                    <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-widest">Asset</th>
-                    <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-widest">Type</th>
-                    <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-widest text-right">Quantity</th>
-                    <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-widest text-right">Price</th>
-                    <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-widest text-right">Total</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {filteredTransactions.map((txn, i) => (
-                    <tr
-                      key={i}
-                      className="hover:bg-slate-50/80 transition-colors group"
-                    >
-                      <td className="p-4 text-sm font-medium text-slate-600">
-                        {new Date(txn.createdAt).toLocaleDateString()}
-                        <span className="block text-xs text-slate-400 font-normal mt-0.5">
-                          {new Date(txn.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-slate-700 border border-slate-200 text-sm">
-                            {txn.symbol[0]}
-                          </div>
-                          <span className="font-extrabold text-slate-900 tracking-tight">{txn.symbol}</span>
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <span
-                          className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold border ${
-                            txn.type === "BUY"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                              : "bg-rose-50 text-rose-700 border-rose-100"
-                          }`}
-                        >
-                          {txn.type}
-                        </span>
-                      </td>
-                      <td className="p-4 text-right font-bold text-slate-700">{txn.quantity}</td>
-                      <td className="p-4 text-right text-slate-600 font-mono text-sm">
-                        ₹{parseFloat(txn.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td className="p-4 text-right font-black text-slate-900 font-mono">
-                        ₹{(txn.quantity * txn.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
+            <div className="p-0">
+              {/* Desktop View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                      <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-widest">Date & Time</th>
+                      <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-widest">Asset</th>
+                      <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-widest">Type</th>
+                      <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-widest text-right">Quantity</th>
+                      <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-widest text-right">Price</th>
+                      <th className="p-4 font-bold text-slate-500 uppercase text-xs tracking-widest text-right">Total</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {filteredTransactions.map((txn, i) => (
+                      <tr
+                        key={i}
+                        className="hover:bg-slate-50/80 transition-colors group"
+                      >
+                        <td className="p-4 text-sm font-medium text-slate-600">
+                          {new Date(txn.createdAt).toLocaleDateString()}
+                          <span className="block text-xs text-slate-400 font-normal mt-0.5">
+                            {new Date(txn.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-black text-slate-700 border border-slate-200 text-sm">
+                              {txn.symbol[0]}
+                            </div>
+                            <span className="font-extrabold text-slate-900 tracking-tight">{txn.symbol}</span>
+                          </div>
+                        </td>
+                        <td className="p-4">
+                          <span
+                            className={`inline-flex items-center px-3 py-1 rounded-lg text-xs font-bold border ${
+                              txn.type === "BUY"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                                : "bg-rose-50 text-rose-700 border-rose-100"
+                            }`}
+                          >
+                            {txn.type}
+                          </span>
+                        </td>
+                        <td className="p-4 text-right font-bold text-slate-700">{txn.quantity}</td>
+                        <td className="p-4 text-right text-slate-600 font-mono text-sm">
+                          ₹{parseFloat(txn.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td className="p-4 text-right font-black text-slate-900 font-mono">
+                          ₹{(txn.quantity * txn.price).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile View */}
+              <div className="md:hidden divide-y divide-slate-100">
+                {filteredTransactions.map((txn, i) => (
+                  <div key={i} className="p-6 space-y-4">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center font-black text-slate-400 border border-slate-100">
+                          {txn.symbol[0]}
+                        </div>
+                        <div>
+                          <p className="font-black text-slate-900 text-lg tracking-tight leading-none">{txn.symbol}</p>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">
+                            {new Date(txn.createdAt).toLocaleDateString()} • {new Date(txn.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-lg text-[10px] font-black border uppercase tracking-widest ${
+                          txn.type === "BUY"
+                            ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+                            : "bg-rose-50 text-rose-600 border-rose-100"
+                        }`}
+                      >
+                        {txn.type}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                      <div>
+                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">Quantity</p>
+                        <p className="font-bold text-slate-700">{txn.quantity} Units</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[9px] text-slate-400 font-black uppercase tracking-widest mb-1">Unit Price</p>
+                        <p className="font-bold text-slate-700">₹{parseFloat(txn.price).toLocaleString('en-IN')}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center px-2">
+                       <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Value</p>
+                       <p className="text-lg font-black text-slate-900 font-mono tracking-tight">₹{(txn.quantity * txn.price).toLocaleString('en-IN')}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="p-24 text-center">

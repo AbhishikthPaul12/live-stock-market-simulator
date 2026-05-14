@@ -161,7 +161,7 @@ export default function AILearn() {
             <input
               value={customInput}
               onChange={(e) => setCustomInput(e.target.value)}
-              placeholder="e.g. What is dollar cost averaging? How do options work?"
+              placeholder="e.g. What is risk management? (Ask anything...)"
               className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 transition-all"
             />
             <button

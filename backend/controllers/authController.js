@@ -1,5 +1,7 @@
 import User from "../models/User.js";
 import Transaction from "../models/Transaction.js";
+import Portfolio from "../models/Portfolio.js";
+import Alert from "../models/Alert.js";
 import jwt from "jsonwebtoken";
 
 // Generate JWT
@@ -113,6 +115,10 @@ export const forgotPassword = async (req, res) => {
       return res.status(404).json({ message: "User with this email does not exist" });
     }
 
+    if (user.isGuest) {
+      return res.status(403).json({ message: "Password reset is disabled for the demo account." });
+    }
+
     // Generate a simple reset token (in real app, use crypto.randomBytes)
     const resetToken = Math.random().toString(36).slice(-8).toUpperCase();
     
@@ -176,6 +182,75 @@ export const resetPassword = async (req, res) => {
 
     res.json({ message: "Password reset successful. You can now login with your new password." });
 
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// GUEST LOGIN
+export const guestLogin = async (req, res) => {
+  try {
+    let user = await User.findOne({ email: "guest@demo.com" });
+
+    if (!user) {
+      user = await User.create({
+        name: "Demo Guest",
+        email: "guest@demo.com",
+        password: Math.random().toString(36).slice(-10), // random password
+        isGuest: true,
+        walletBalance: 100000,
+      });
+      
+      // Seed some initial data for the guest if it's new
+      await Portfolio.create([
+        { user: user._id, symbol: "RELIANCE.NS", quantity: 10, buyPrice: 2500 },
+        { user: user._id, symbol: "TCS.NS", quantity: 5, buyPrice: 3400 }
+      ]);
+    }
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      walletBalance: user.walletBalance,
+      realizedProfit: user.realizedProfit,
+      isGuest: user.isGuest,
+      token: generateToken(user._id),
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// RESET GUEST DATA
+export const resetGuestData = async (req, res) => {
+  try {
+    if (!req.user || !req.user.isGuest) {
+      return res.status(403).json({ message: "Only guest accounts can be reset." });
+    }
+
+    const userId = req.user._id;
+
+    // Clear all activity
+    await Promise.all([
+      Portfolio.deleteMany({ user: userId }),
+      Transaction.deleteMany({ user: userId }),
+      Alert.deleteMany({ user: userId })
+    ]);
+
+    // Reset user stats
+    req.user.walletBalance = 100000;
+    req.user.realizedProfit = 0;
+    await req.user.save();
+
+    // Re-seed with fresh data
+    await Portfolio.create([
+      { user: userId, symbol: "RELIANCE.NS", quantity: 10, buyPrice: 2500 },
+      { user: userId, symbol: "TCS.NS", quantity: 5, buyPrice: 3200 },
+      { user: userId, symbol: "INFY.NS", quantity: 15, buyPrice: 1400 }
+    ]);
+
+    res.json({ message: "Guest account has been reset to demo state.", walletBalance: 100000 });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
