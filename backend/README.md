@@ -1,4 +1,4 @@
-# StockSim AI Backend
+# StockSim Backend
 
 The robust server-side engine powering real-time Indian stock market simulation and AI-driven financial insights.
 
