@@ -27,13 +27,13 @@ The application features a **One-Click Instant Demo** mode. No registration is r
 
 ## Tech Stack
 
-| Layer | Technologies |
+| Layer | Technologies & Packages |
 | :--- | :--- |
-| **Frontend** | React.js, Tailwind CSS, Framer Motion, Recharts, Lucide Icons |
-| **Backend** | Node.js, Express.js, JWT Authentication, Helmet (Security) |
-| **Database** | MongoDB (Mongoose ODM) |
-| **Real-time** | Socket.io (Bi-directional live feed) |
-| **AI Integration** | Llama-3.2 via Hugging Face Inference API |
+| **Frontend** | React.js (v19), Tailwind CSS, **Framer Motion**, **Recharts**, Lucide Icons |
+| **Backend** | Node.js, Express.js (v5), **Mongoose**, **JWT**, **Helmet** (Security) |
+| **Database** | MongoDB (Cloud Atlas) |
+| **Real-time** | **Socket.io** (Bi-directional live feed synchronization) |
+| **AI Integration** | **Llama-3.2** via Hugging Face Inference API |
 
 ## Quick Start
 
