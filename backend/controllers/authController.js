@@ -119,7 +119,7 @@ export const forgotPassword = async (req, res) => {
       return res.status(403).json({ message: "Password reset is disabled for the demo account." });
     }
 
-    // Generate a simple reset token (in real app, use crypto.randomBytes)
+    // Generate a simple reset token
     const resetToken = Math.random().toString(36).slice(-8).toUpperCase();
     
     // Save token 
@@ -130,8 +130,7 @@ export const forgotPassword = async (req, res) => {
     //just return for the simulation.
     res.json({ 
       message: "Password reset token generated", 
-      resetToken: resetToken,
-      info: "In a real production app, this token would be sent via email."
+      resetToken: resetToken
     });
 
   } catch (error) {

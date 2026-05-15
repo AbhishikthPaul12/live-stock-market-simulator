@@ -2,9 +2,8 @@
 
 The robust server-side engine powering real-time Indian stock market simulation and AI-driven financial insights.
 
----
 
-## 🔄 Data Flow & Price Simulation
+## Data Flow & Price Simulation
 
 ```mermaid
 sequenceDiagram
@@ -23,9 +22,8 @@ sequenceDiagram
     end
 ```
 
----
 
-## 🚀 Core Services
+## Core Services
 
 ### Real-Time Price Engine
 Located in `services/stockService.js`, this engine eliminates the need for expensive third-party APIs by simulating a deterministic random-walk model for Nifty 50 stocks. 
@@ -39,7 +37,6 @@ Integration with **Hugging Face (Llama-3.2)** provides:
 - **Sentiment Scrubbing**: Cleans and summarizes raw financial headlines.
 - **Dynamic Learning**: Generates contextual explanations for market terminology.
 
----
 
 ## Key Dependencies
 
@@ -54,18 +51,16 @@ Integration with **Hugging Face (Llama-3.2)** provides:
 | **cors** | Configurable cross-origin resource sharing |
 | **@huggingface/inference** | Direct integration with Llama-3.2 AI models |
 
----
 
-## 🛡️ Security & Scalability
+## Security & Scalability
 
 - **Helmet**: Secures the app by setting various HTTP headers.
 - **JWT**: Stateless authentication for secure session management.
 - **CORS**: Flexible, environment-aware cross-origin policy.
 - **Static Serving**: In production, the backend automatically serves the frontend build from `../frontend/dist`.
 
----
 
-## 📡 API Endpoints
+## API Endpoints
 
 | Route | Description | Auth |
 | :--- | :--- | :--- |
@@ -75,9 +70,8 @@ Integration with **Hugging Face (Llama-3.2)** provides:
 | `/api/ai` | Insights, Learning, and Analysis | Yes |
 | `/api/portfolio` | Holdings and P&L Tracking | Yes |
 
----
 
-## ⚙️ Setup & Configuration
+## Setup & Configuration
 
 1. **Environment**: Create a `.env` file based on the template:
    ```env

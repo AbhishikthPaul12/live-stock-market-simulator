@@ -2,9 +2,8 @@
 
 A premium, glassmorphic UI built with React.js, designed to provide an institutional-grade trading experience for the Indian stock market.
 
----
 
-## 🎨 Design System & State Flow
+## Design System & State Flow
 
 ```mermaid
 graph LR
@@ -33,24 +32,22 @@ graph LR
     Axios --> Toast
 ```
 
----
 
-## 💎 Key UX Features
+## Key UX Features
 
-### 🏢 Institutional-Grade UI
+### Institutional-Grade UI
 - **Glassmorphism**: Sleek, translucent interface using Tailwind's backdrop-blur and custom gradients.
 - **Micro-animations**: Smooth transitions and hover effects powered by **Framer Motion**.
 - **Responsive Charts**: Crosshair-enabled area charts for technical analysis.
 
-### ⚡ Real-Time Synchronization
+### Real-Time Synchronization
 - **Socket.io Integration**: Subscribes to live price feeds (`stockUpdate`) to update portfolios and order books instantly without page refreshes.
 - **Dynamic P&L**: Unrealized profit/loss updates every second based on live market volatility.
 
-### 🤖 AI Learning Integration
+### AI Learning Integration
 - **Interactive Tutor**: Specialized interface for conversing with Llama-3.2 about market mechanics.
 - **Smart Insight Cards**: Per-stock AI summaries rendered from high-fidelity Markdown.
 
----
 
 ## Key Libraries
 
@@ -66,9 +63,8 @@ graph LR
 | **react-markdown** | Component to render AI-generated markdown safely |
 | **lucide-react** | Beautiful and consistent icon set |
 
----
 
-## ⚙️ Installation & Development
+## Installation & Development
 
 1. **Install dependencies**:
    ```bash
@@ -87,4 +83,3 @@ graph LR
    ```bash
    npm run build
    ```
-
