@@ -109,7 +109,7 @@ INITIAL_STOCKS.forEach(stock => {
   sessionHistory[stock.symbol] = [];
 });
 
-// ─── Real-Time Simulation Engine (replaces Finnhub API) ─────────────────────
+// ─── Real-Time Simulation Engine ─────────────────────
 // Simulates realistic price movement using random-walk with momentum/mean-reversion.
 // Broadcasts updates via Socket.IO every second.
 let currentIndex = 0;
@@ -148,7 +148,7 @@ setInterval(async () => {
     // Collect updated stock for Socket.IO broadcast
     updatedStocks.push(stockCache[sym]);
 
-    // Evaluate price alerts (unchanged logic)
+    // Evaluate price alerts
     try {
       const triggeredAlerts = await Alert.find({ symbol: sym, triggered: false });
       for (const alert of triggeredAlerts) {
@@ -182,7 +182,7 @@ setInterval(async () => {
   currentIndex = (currentIndex + BATCH_SIZE) % INITIAL_STOCKS.length;
 }, 1000);
 
-// ─── Exported Functions (unchanged API surface) ─────────────────────────────
+// ─── Exported Functions ─────────────────────────────
 
 export const getAllStocks = async () => Object.values(stockCache);
 
