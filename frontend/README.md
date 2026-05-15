@@ -2,19 +2,55 @@
 
 A premium, glassmorphic UI built with React.js, designed to provide an institutional-grade trading experience for the Indian stock market.
 
-## Key UX Components
+---
 
-### Real-Time Dashboard
-- **Socket Integration**: Listens for live price feeds to update portfolios and charts instantly without page refreshes.
-- **Dynamic Charts**: Multi-timeframe area charts (1D, 1W, 1M, 1YR, 3YRS) with responsive crosshairs.
+## 🎨 Design System & State Flow
 
-### AI Learning Hub
-- **Interactive Tutor**: A dedicated section to ask AI about market concepts.
-- **Smart Insights**: Per-stock AI summaries that explain price action using simulated market news.
+```mermaid
+graph LR
+    subgraph UI_Layer [View Layer]
+        D[Dashboard]
+        M[Market Page]
+        A[AI Learning Hub]
+    end
 
-### Professional Feedback
-- **Toast System**: Custom-built notification system for all app interactions.
-- **Demo Mode**: Instant access with pre-seeded data for rapid evaluation.
+    subgraph State_Layer [Global Context API]
+        Auth[Auth Provider]
+        Soc[Socket Provider]
+        Toast[Toast Provider]
+    end
+
+    subgraph Logic_Layer [API/Service Layer]
+        Axios[Axios Interceptors]
+        SocketIO[Socket.IO Client]
+    end
+
+    D --> Auth
+    M --> Soc
+    A --> Axios
+    Soc <--> SocketIO
+    Auth --> Axios
+    Axios --> Toast
+```
+
+---
+
+## 💎 Key UX Features
+
+### 🏢 Institutional-Grade UI
+- **Glassmorphism**: Sleek, translucent interface using Tailwind's backdrop-blur and custom gradients.
+- **Micro-animations**: Smooth transitions and hover effects powered by **Framer Motion**.
+- **Responsive Charts**: Crosshair-enabled area charts for technical analysis.
+
+### ⚡ Real-Time Synchronization
+- **Socket.io Integration**: Subscribes to live price feeds (`stockUpdate`) to update portfolios and order books instantly without page refreshes.
+- **Dynamic P&L**: Unrealized profit/loss updates every second based on live market volatility.
+
+### 🤖 AI Learning Integration
+- **Interactive Tutor**: Specialized interface for conversing with Llama-3.2 about market mechanics.
+- **Smart Insight Cards**: Per-stock AI summaries rendered from high-fidelity Markdown.
+
+---
 
 ## Key Libraries
 
@@ -30,14 +66,9 @@ A premium, glassmorphic UI built with React.js, designed to provide an instituti
 | **react-markdown** | Component to render AI-generated markdown safely |
 | **lucide-react** | Beautiful and consistent icon set |
 
-## Technology Stack
+---
 
-- **Framework**: React.js (Vite)
-- **Styling**: Tailwind CSS & Framer Motion
-- **Charting**: Recharts
-- **State Management**: Context API (Auth, Socket, Toasts)
-
-## Installation
+## ⚙️ Installation & Development
 
 1. **Install dependencies**:
    ```bash
@@ -56,3 +87,4 @@ A premium, glassmorphic UI built with React.js, designed to provide an instituti
    ```bash
    npm run build
    ```
+
