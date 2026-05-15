@@ -13,15 +13,15 @@ const socket = io(SOCKET_URL, {
 });
 
 socket.on("connect", () => {
-  console.log("🔌 Socket.IO connected:", socket.id);
+  console.log(" Socket.IO connected:", socket.id);
 });
 
 socket.on("disconnect", (reason) => {
-  console.log("🔌 Socket.IO disconnected:", reason);
+  console.log(" Socket.IO disconnected:", reason);
 });
 
 socket.on("connect_error", (err) => {
-  console.warn("🔌 Socket.IO connection error:", err.message);
+  console.warn(" Socket.IO connection error:", err.message);
 });
 
 export default socket;
