@@ -14,7 +14,6 @@ import Register from "./pages/Register";
 import Profile from "./pages/Profile";
 import Analytics from "./pages/Analytics";
 import ForgotPassword from "./pages/ForgotPassword";
-import VerifyOTP from "./pages/VerifyOTP";
 import ResetPassword from "./pages/ResetPassword";
 import AILearn from "./pages/AILearn";
 
@@ -46,8 +45,7 @@ function App() {
             element={!user ? <Register /> : <Navigate to="/dashboard" />}
           />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/verify-otp" element={<VerifyOTP />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/reset-password/:token?" element={<ResetPassword />} />
           <Route
             path="/dashboard"
             element={user ? <RootLayout user={user} setUser={setUser} /> : <Navigate to="/" />}

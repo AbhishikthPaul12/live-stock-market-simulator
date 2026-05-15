@@ -39,17 +39,12 @@ export const forgotPassword = async (email) => {
   return res.data;
 };
 
-export const verifyOTP = async (email, otp) => {
-  const res = await axios.post("/auth/verify-otp", { email, otp });
+export const verifyResetToken = async (token) => {
+  const res = await axios.post("/auth/verify-token", { token });
   return res.data;
 };
 
 export const resetPassword = async (data) => {
   const res = await axios.post("/auth/reset-password", data);
-  return res.data;
-};
-
-export const resendOTP = async (email) => {
-  const res = await axios.post("/auth/resend-otp", { email });
   return res.data;
 };

@@ -1,7 +1,7 @@
 import { io } from "socket.io-client";
 
 // Singleton Socket.IO client — connects to the backend server
-const SOCKET_URL = "http://localhost:5000";
+const SOCKET_URL = window.location.hostname === "localhost" ? "http://localhost:5000" : window.location.origin;
 
 const socket = io(SOCKET_URL, {
   autoConnect: true,

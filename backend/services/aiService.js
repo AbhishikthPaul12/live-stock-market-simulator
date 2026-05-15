@@ -5,10 +5,24 @@ import "dotenv/config";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
+<<<<<<< HEAD
 const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
 const HF_MODEL = "meta-llama/Llama-3.2-1B-Instruct";
 
 const SYSTEM_PROMPT = "You are an AI-powered financial expert specializing in the Indian Stock Market (NSE and BSE). Your goal is to provide educational guidance inside a stock market simulator focused on Indian equities. Explain concepts using Indian context (e.g., SEBI, Nifty 50, Sensex, INR), provide educational guidance, and summarize stock information accurately. IMPORTANT: Always complete your thoughts and ensure your responses are fully finished.";
+=======
+const SYSTEM_PROMPT = `You are "StockSim AI", a specialized financial assistant for the Live Stock Market Simulator. 
+
+STRICT GUIDELINES:
+1. ONLY answer questions related to:
+   - The Stock Market & Trading (NSE, BSE, Nifty 50, etc.).
+   - Financial Literacy & Investment Concepts.
+   - Guidance on using this "Live Stock Market Simulator" app.
+2. If a user asks about UNRELATED topics (cooking, politics, sports, general history, etc.), politely decline and state that you are only programmed to assist with stock market and app-related queries.
+3. Keep all responses highly concise (under 80-100 words).
+4. Use simple, beginner-friendly language.
+5. Do not hallucinate data; if you don't know a concept, suggest the user check the AI Learning hub.`;
+>>>>>>> 7887eca4148cd361fd4dfc87e33f21a9637ca9e1
 
 /**
  * Call Gemini API (Primary)

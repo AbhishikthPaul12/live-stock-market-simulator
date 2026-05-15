@@ -3,8 +3,6 @@ import Transaction from "../models/Transaction.js";
 import Portfolio from "../models/Portfolio.js";
 import Alert from "../models/Alert.js";
 import jwt from "jsonwebtoken";
-import crypto from "crypto";
-import { sendOTPEmail } from "../services/emailService.js";
 
 // Generate JWT
 const generateToken = (id) => {
@@ -107,7 +105,7 @@ export const getUserProfile = async (req, res) => {
   }
 };
 
-// FORGOT PASSWORD - STEP 1: Generate & Send OTP
+// FORGOT PASSWORD
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
@@ -121,101 +119,68 @@ export const forgotPassword = async (req, res) => {
       return res.status(403).json({ message: "Password reset is disabled for the demo account." });
     }
 
-    // Generate 6-digit numeric OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate a simple reset token (in real app, use crypto.randomBytes)
+    const resetToken = Math.random().toString(36).slice(-8).toUpperCase();
     
-    // Save OTP & Expiry (5 minutes)
-    user.resetOTP = otp;
-    user.resetOTPExpire = Date.now() + 5 * 60 * 1000;
+    // Save token 
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
     await user.save();
 
-    // Send Email
-    try {
-      await sendOTPEmail(user.email, otp);
-      res.json({ message: "OTP sent to your email. Valid for 5 minutes." });
-    } catch (emailError) {
-      // If email fails, clear the OTP and return error
-      user.resetOTP = undefined;
-      user.resetOTPExpire = undefined;
-      await user.save();
-      return res.status(500).json({ message: "Failed to send email. Please try again later." });
-    }
+    //just return for the simulation.
+    res.json({ 
+      message: "Password reset token generated", 
+      resetToken: resetToken,
+      info: "In a real production app, this token would be sent via email."
+    });
 
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// VERIFY OTP - STEP 2: Check if OTP is valid
-export const verifyOTP = async (req, res) => {
+// VERIFY RESET TOKEN
+export const verifyResetToken = async (req, res) => {
   try {
-    const { email, otp } = req.body;
+    const { token } = req.body;
 
     const user = await User.findOne({
-      email,
-      resetOTP: otp,
-      resetOTPExpire: { $gt: Date.now() }
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
     });
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid or expired OTP" });
+      return res.status(400).json({ message: "Invalid or expired reset token" });
     }
 
-    res.json({ message: "OTP verified successfully", valid: true });
+    res.json({ message: "Token verified successfully", valid: true });
 
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// RESET PASSWORD - STEP 3: Update Password
+// RESET PASSWORD
 export const resetPassword = async (req, res) => {
   try {
-    const { email, otp, newPassword } = req.body;
+    const { token, newPassword } = req.body;
 
     const user = await User.findOne({
-      email,
-      resetOTP: otp,
-      resetOTPExpire: { $gt: Date.now() }
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
     });
 
     if (!user) {
-      return res.status(400).json({ message: "Verification failed. Please request a new OTP." });
+      return res.status(400).json({ message: "Invalid or expired reset token" });
     }
 
     // Update password
     user.password = newPassword;
-    user.resetOTP = undefined;
-    user.resetOTPExpire = undefined;
-    user.resetPasswordToken = undefined; // Cleanup old system fields if any
+    user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
 
     res.json({ message: "Password reset successful. You can now login with your new password." });
-
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// RESEND OTP
-export const resendOTP = async (req, res) => {
-  try {
-    const { email } = req.body;
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    // Generate new OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    user.resetOTP = otp;
-    user.resetOTPExpire = Date.now() + 5 * 60 * 1000;
-    await user.save();
-
-    await sendOTPEmail(user.email, otp);
-    res.json({ message: "A new OTP has been sent to your email." });
 
   } catch (error) {
     res.status(500).json({ message: error.message });

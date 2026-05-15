@@ -105,4 +105,4 @@ POST /api/alerts
 ### Get Global Rankings
 
 GET /api/leaderboard
-- **Response**: Top users ranked by total net value (Wallet + Portfolio).
+- **Response**: Top users ranked by profit.

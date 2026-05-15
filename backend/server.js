@@ -58,7 +58,7 @@ app.use("/api/user", userRoutes);
 app.use("/api/stocks", stockRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/alerts", alertRoutes);
-app.use("/api/ai", aiRoutes); // Strict limiter removed
+app.use("/api/ai", aiRoutes);
 
 // Static Serving for Production
 const frontendPath = path.join(__dirname, "../frontend/dist");
