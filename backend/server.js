@@ -41,7 +41,9 @@ const io = new Server(httpServer, {
 });
 
 // Middleware
-app.use(helmet()); // Security Headers
+app.use(helmet({
+  contentSecurityPolicy: false // Allow frontend to load external stock logos (Google favicons, tickerlogos, etc.)
+})); // Security Headers
 app.use(cors(corsOptions));
 app.use(express.json());
 
