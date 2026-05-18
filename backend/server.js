@@ -45,10 +45,12 @@ app.use(helmet()); // Security Headers
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Test route
-app.get("/", (req, res) => {
-  res.send("API Running...");
-});
+// Test route (only for development)
+if (process.env.NODE_ENV !== "production") {
+  app.get("/", (req, res) => {
+    res.send("API Running...");
+  });
+}
 
 app.use("/api/auth", authRoutes);
 app.use("/api/trade", tradeRoutes);
