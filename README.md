@@ -1,4 +1,4 @@
-# Live Stock Market Simulator (Indian Equity Edition)
+# Live Stock Market Simulator 
 
 A premium, full-stack stock market simulation platform tailored for the **Indian Equity Market (NSE)**. This platform allows users to trade Nifty 50 stocks with virtual capital, leverage AI-driven insights for decision-making, and track real-time portfolio performance with high-fidelity analytics.
 
